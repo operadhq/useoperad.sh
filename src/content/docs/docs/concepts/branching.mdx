@@ -1,0 +1,130 @@
+---
+title: Branching
+description: Fork the graph to explore what-if scenarios, then diff the outcomes.
+---
+
+Branching lets you **fork the graph** at any point in its history to explore alternative outcomes. Create a branch, make different decisions, then diff the two timelines to see what diverged.
+
+## Why This Matters
+
+In insurance: "What if we denied this claim instead of approving it? How would the graph look different?" Branching lets agents explore counterfactuals without affecting the real graph — and gives humans a tool to understand the impact of different decisions.
+
+## Branch
+
+Create a branch from a specific event in the graph's history:
+
+```typescript
+const branch = await runtime.branch('main-graph', {
+  atEvent: someEventId,
+  label: 'what-if-deny',
+})
+// branch is a full GraphAPI — same interface as the original
+```
+
+The branch copies all events up to (and including) the specified event. From that point, the branch diverges independently.
+
+```typescript
+// In the branch, try a different path
+await branch.addObject({
+  type: 'approval',
+  data: { status: 'denied', reason: 'What-if scenario' },
+})
+
+// Original graph is unchanged
+const originalApprovals = await originalGraph.queryObjects({ type: 'approval' })
+// → still shows the original approval
+```
+
+## Diff
+
+Compare two graphs to see what changed:
+
+```typescript
+const diff = await runtime.diff('main-graph', branch.id)
+
+console.log(diff.objects)
+// [
+//   { objectId: '...', type: 'approval', status: 'added',
+//     data: { status: 'denied', reason: 'What-if scenario' } },
+//   { objectId: '...', type: 'approval', status: 'modified',
+//     sourceData: { status: 'approved' },
+//     targetData: { status: 'denied' } },
+// ]
+
+console.log(diff.sourceLog.length)  // Events on main after fork point
+console.log(diff.targetLog.length)  // Events on branch after fork point
+```
+
+### Diff Structure
+
+```typescript
+interface GraphDiff {
+  sourceGraphId: string
+  targetGraphId: string
+  objects: ObjectDiff[]     // Added, removed, or modified objects
+  relations: RelationDiff[] // Added or removed relations
+  sourceLog: GraphEvent[]   // Events on source after fork
+  targetLog: GraphEvent[]   // Events on branch after fork
+}
+
+interface ObjectDiff {
+  objectId: string
+  type: string
+  status: 'added' | 'removed' | 'modified'
+  sourceData?: Record<string, JsonValue>  // On source side
+  targetData?: Record<string, JsonValue>  // On branch side
+  data?: Record<string, JsonValue>        // For added/removed
+}
+```
+
+## Checkout (Time Travel)
+
+Replay the graph up to a specific event to see its state at that point:
+
+```typescript
+const pastGraph = await runtime.checkout('my-graph', eventId)
+// pastGraph reflects state at that event — read-only snapshot
+const objectsAtThatPoint = await pastGraph.queryObjects()
+```
+
+## Insurance Pack Usage
+
+The insurance pack demo forks each claim's graph midway through processing to explore what would happen if the claim were denied:
+
+```typescript
+// Fork at the midpoint of processing
+const branch = await runtime.branch(graphId, {
+  atEvent: midpointEvent.id,
+  label: 'what-if-deny',
+})
+
+// Add a denial in the branch
+await branch.addObject({
+  type: 'approval',
+  data: { status: 'denied', decidedBy: 'system', reason: 'What-if' },
+})
+
+// Compare outcomes
+const diff = await runtime.diff(graphId, branch.id)
+// Shows the divergence: different objects, different event logs
+```
+
+## API Surface
+
+```typescript
+interface Runtime {
+  branch(graphId: string, opts: BranchOptions): Promise<GraphAPI>
+  diff(source: string, target: string): Promise<GraphDiff>
+  checkout(graphId: string, eventId: string): Promise<GraphAPI>
+}
+
+interface BranchOptions {
+  atEvent: string       // Event ID to branch at
+  label?: string        // Human-readable label
+  branchId?: string     // Custom graph ID for the branch
+}
+```
+
+## Next
+
+[API Reference](/docs/reference/api/) — Full API surface

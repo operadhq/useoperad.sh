@@ -1,0 +1,98 @@
+---
+title: Quickstart
+description: Run the Operad insurance pack demo in 30 seconds.
+---
+
+The **Insurance Pack** is a reference implementation that processes insurance claims end-to-end using 6 cascading behaviors, 2 LLM calls (from fixtures — no API key needed), and full governance.
+
+## Run the Demo
+
+```bash
+git clone https://github.com/operadhq/operad.git
+cd operad/typescript
+pnpm install
+pnpm --filter @operad/insurance-pack demo
+```
+
+## What Happens
+
+The demo runs two scenarios — a water damage claim (low risk) and an auto collision claim (high risk). Each triggers a **6-behavior cascade**:
+
+```
+claim created
+  → [1] claim-intake: creates claimant, links policy
+    → [2] evidence-extraction (LLM): extracts evidence from description
+      → [3] contradiction-check: compares evidence, flags conflicts
+        → [4] risk-scoring (LLM): scores risk, recommends action
+          → [5] carrier-routing: routes to carrier, records alternatives
+            → [6] approval-gate: auto-approves or proposes for human review
+```
+
+### Scenario 1: Water Damage (Low Risk)
+
+- **Claim**: Burst pipe in basement, $35k damage
+- **Evidence**: 3 items extracted, no contradictions
+- **Risk Score**: 32/100 → approve
+- **Carrier**: Mutual Shield Insurance → accepted
+- **Result**: Auto-approved by system (score below threshold)
+
+### Scenario 2: Auto Collision (High Risk)
+
+- **Claim**: Rear-end collision, disputed fault, $12.5k
+- **Evidence**: 3 items including conflicting accounts
+- **Risk Flag**: Contradictions detected between driver statements
+- **Risk Score**: 68/100 → escalate
+- **Carrier**: Pacific Auto Mutual → counter-offered
+- **Result**: Governance gate holds for human review → approved by senior adjuster
+
+## Expected Output
+
+```
+◆ Operad Insurance Pack — End-to-End Claim Processing
+  Every mutation is an event. Every decision is recorded.
+  Running with recorded fixtures — no API keys needed.
+
+═══════════════════════════════════════════════════════
+  Scenario: Water Damage — Basement Flooding
+═══════════════════════════════════════════════════════
+
+── 1. Seed Policy ────────────────────────────────────
+  [1] Policy created: HO-3-78421 (Mutual Shield Insurance)
+
+── 2. File Claim → Behavior Cascade Begins ───────────
+  [2] Claim filed: CLM-2024-00147
+  [3] ↳ claim-intake: Created claimant "Jane Doe"
+  [4] ↳ evidence-extraction: Extracted 3 evidence items
+  [5] ↳ contradiction-check: 0 risk flag(s)
+
+── 3. Risk Scoring (LLM) ─────────────────────────────
+  [6] ↳ risk-scoring: Score 32/100
+       Recommendation: approve
+
+── 4. Carrier Routing & Approval ─────────────────────
+  [7] ↳ carrier-routing: Mutual Shield Insurance → accepted
+  [8] ↳ approval-gate: approved (by system)
+
+── Summary ───────────────────────────────────────────
+  Objects:   9
+  Relations: 5
+  Events:    40
+  Decisions: 3
+  LLM calls: 2 (all from fixtures — zero API keys)
+```
+
+## Key Concepts Demonstrated
+
+| Concept | Insurance Pack Usage |
+|---------|---------------------|
+| [Graph](/docs/concepts/graph/) | 8 object types (claim, policy, claimant, evidence, risk_flag, assessment, carrier_response, approval), linked by relations |
+| [Events](/docs/concepts/events/) | ~40 events per scenario, full causal chains |
+| [Behaviors](/docs/concepts/behaviors/) | 6 behaviors cascade from a single `object.created` event |
+| [Decisions](/docs/concepts/decisions/) | 3 decisions recorded with alternatives and confidence |
+| [Branching](/docs/concepts/branching/) | Fork + diff to explore denial path |
+
+## Next Steps
+
+- [Graph](/docs/concepts/graph/) — Learn about objects and relations
+- [Behaviors](/docs/concepts/behaviors/) — How reactive functions work
+- [API Reference](/docs/reference/api/) — Full API surface

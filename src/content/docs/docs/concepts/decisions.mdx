@@ -1,0 +1,122 @@
+---
+title: Decisions
+description: Recording choices with alternatives, confidence scores, and reasoning.
+---
+
+Every time your agent makes a choice, Operad records it as a **Decision** — the selected action, the alternatives that were rejected (with reasons), a confidence score, and free-text reasoning.
+
+## Why This Matters
+
+When an insurance claim is approved, regulators and auditors need to know: *Why was it approved? What other options were considered? How confident was the system?* Decisions make agent reasoning legible and auditable.
+
+## Recording a Decision
+
+```typescript
+const decision = await graph.recordDecision({
+  selectedAction: 'approve_claim',
+  alternatives: [
+    {
+      action: 'deny_claim',
+      rejected: 'Evidence confirms covered peril under HO-3 policy',
+    },
+    {
+      action: 'escalate_to_human',
+      rejected: 'Combined evidence confidence > 0.9, amount within limits',
+    },
+  ],
+  confidence: 0.92,
+  reasoning: 'Policy covers water damage. Transcript and photos corroborate. ' +
+    'Amount ($35k) within limit ($150k).',
+})
+```
+
+### Decision Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `selectedAction` | `string` | What was chosen |
+| `alternatives` | `Alternative[]` | What was rejected and why |
+| `confidence` | `number` | 0.0 – 1.0 confidence score |
+| `reasoning` | `string` | Free-text explanation |
+
+### Alternative Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action` | `string` | The rejected option |
+| `rejected` | `string` | Why it was rejected |
+
+## Querying Decisions
+
+```typescript
+// All decisions
+const all = await graph.queryDecisions({})
+
+// Recent decisions
+const recent = await graph.queryDecisions({
+  after: '2024-01-01T00:00:00Z',
+})
+
+// High-confidence decisions only
+const confident = await graph.queryDecisions({
+  minConfidence: 0.9,
+})
+```
+
+## Insurance Pack Examples
+
+The insurance pack records 3 decisions per claim:
+
+| Decision | Confidence | Context |
+|----------|-----------|---------|
+| `accept_intake` | 0.98 | Claim has valid fields and policy |
+| `route_to_carrier` | 0.72–0.95 | Based on risk score |
+| `auto_approve` or governance | 0.96 | Based on risk threshold |
+
+## Events
+
+Recording a decision emits a `decision.recorded` event:
+
+```typescript
+{
+  type: 'decision.recorded',
+  payload: {
+    selectedAction: 'approve_claim',
+    confidence: 0.92,
+    reasoning: '...',
+  },
+  actor: 'user',
+}
+```
+
+Other behaviors can react to decisions — for example, an audit-log behavior:
+
+```typescript
+const auditLog = behavior({
+  name: 'audit-log',
+  on: ['decision.recorded'],
+  handler: async (event) => {
+    console.log(`Decision: ${event.payload.selectedAction} ` +
+      `(confidence: ${event.payload.confidence})`)
+  },
+})
+```
+
+## API Surface
+
+```typescript
+interface GraphAPI {
+  recordDecision(input: DecisionInput): Promise<Decision>
+  queryDecisions(filter?: DecisionFilter): Promise<Decision[]>
+}
+
+interface DecisionFilter {
+  after?: string      // ISO timestamp
+  before?: string     // ISO timestamp
+  minConfidence?: number
+}
+```
+
+## Next
+
+[Branching](/docs/concepts/branching/) — Fork the graph for what-if scenarios

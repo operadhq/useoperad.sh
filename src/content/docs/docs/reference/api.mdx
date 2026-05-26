@@ -1,0 +1,391 @@
+---
+title: API Reference
+description: Complete API surface for @operad/core.
+---
+
+## Runtime
+
+Create a runtime to manage graphs, behaviors, and the event loop.
+
+```typescript
+import { createRuntime } from '@operad/core'
+import { MemoryAdapter } from '@operad/adapter-memory'
+
+const runtime = createRuntime({
+  storage: new MemoryAdapter(),
+  behaviors: [/* BehaviorDef[] */],
+})
+```
+
+### `createRuntime(options: RuntimeOptions): Runtime`
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `storage` | `StorageAdapter` | Storage backend (MemoryAdapter or PostgresAdapter) |
+| `behaviors` | `BehaviorDef[]` | Initial behaviors to register |
+
+### Runtime Methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `createGraph` | `(id: string) => Promise<GraphAPI>` | Create a new graph |
+| `getGraph` | `(id: string) => GraphAPI` | Get existing graph |
+| `registerBehavior` | `(def: BehaviorDef) => void` | Add a behavior |
+| `emit` | `(graphId: string, input: EventInput) => Promise<GraphEvent>` | Emit an event (triggers behaviors) |
+| `branch` | `(graphId: string, opts: BranchOptions) => Promise<GraphAPI>` | Create a branch at an event |
+| `diff` | `(source: string, target: string) => Promise<GraphDiff>` | Compare two graphs |
+| `checkout` | `(graphId: string, eventId: string) => Promise<GraphAPI>` | Time-travel to an event |
+| `approve` | `(patchId: string, decidedBy: string) => Promise<void>` | Approve a pending patch |
+| `deny` | `(patchId: string, decidedBy: string) => Promise<void>` | Reject a pending patch |
+| `pendingPatches` | `(graphId: string) => PatchProposal[]` | List pending patches |
+
+---
+
+## GraphAPI
+
+The main interface for interacting with a graph.
+
+### Objects
+
+```typescript
+// Create
+const obj = await graph.addObject({
+  type: 'claim',
+  data: { amount: 35000, status: 'open' },
+})
+
+// Read
+const obj = await graph.getObject(id)
+
+// Update
+const updated = await graph.patchObject(id, { status: 'closed' })
+
+// Delete
+await graph.removeObject(id)
+
+// Query
+const claims = await graph.queryObjects({ type: 'claim' })
+const filtered = await graph.queryObjects({
+  type: 'claim',
+  dataMatch: { status: 'open' },
+})
+```
+
+### Relations
+
+```typescript
+// Create
+const rel = await graph.addRelation(sourceId, targetId, 'supports', {
+  /* optional data */
+})
+
+// Read
+const rel = await graph.getRelation(id)
+
+// Delete
+await graph.removeRelation(id)
+
+// Query
+const rels = await graph.queryRelations({ type: 'supports' })
+const incoming = await graph.queryRelations({ targetId: claimId })
+```
+
+### Event Tracing
+
+```typescript
+const chain = await graph.traceBackward(eventId)  // → [event, parent, ...]
+const effects = await graph.traceForward(eventId)  // → [child, grandchild, ...]
+```
+
+### Decisions
+
+```typescript
+const decision = await graph.recordDecision({
+  selectedAction: 'approve',
+  alternatives: [{ action: 'deny', rejected: 'Evidence sufficient' }],
+  confidence: 0.95,
+  reasoning: 'All checks passed.',
+})
+
+const decisions = await graph.queryDecisions({
+  after: '2024-01-01',
+  minConfidence: 0.8,
+})
+```
+
+### Health
+
+```typescript
+const stale = await graph.getStaleObjects({ thresholdDays: 30 })
+```
+
+---
+
+## Behavior Factories
+
+### `behavior(def: BehaviorDef): BehaviorDef`
+
+```typescript
+import { behavior } from '@operad/core'
+
+behavior({
+  name: string,
+  on: EventType[],
+  where?: WhereClause,
+  view?: ViewSpec,
+  pattern?: string,       // Cypher-like: (a:Type)-[:rel]->(b:Type)
+  handler: BehaviorHandler,
+})
+```
+
+### `llmBehavior(def: LLMBehaviorDef, provider: LLMProvider): BehaviorDef`
+
+```typescript
+import { llmBehavior } from '@operad/core'
+
+llmBehavior({
+  name: string,
+  on: EventType[],
+  where?: WhereClause,
+  view?: ViewSpec,
+  model: string,
+  prompt: string | ((event: GraphEvent, view?: GraphView) => string),
+  tools?: unknown[],
+  onResponse?: (text, event, graph, ctx) => Promise<void>,
+}, provider)
+```
+
+### `relationBehavior(def: RelationBehaviorDef): BehaviorDef`
+
+```typescript
+import { relationBehavior } from '@operad/core'
+
+relationBehavior({
+  name: string,
+  relationType: string,   // Only relations of this type
+  on: EventType[],
+  where?: WhereClause,
+  handler: (relation, event, graph, ctx) => Promise<void>,
+})
+```
+
+---
+
+## Types
+
+### Core Types
+
+```typescript
+interface GraphObject {
+  id: string
+  graphId: string
+  type: string
+  data: Record<string, JsonValue>
+  createdAt: string
+  updatedAt: string
+  createdByEventId: string
+}
+
+interface GraphRelation {
+  id: string
+  graphId: string
+  sourceId: string
+  targetId: string
+  type: string
+  data: Record<string, JsonValue>
+  createdAt: string
+  createdByEventId: string
+}
+
+interface GraphEvent {
+  id: string
+  graphId: string
+  type: EventType
+  payload: Record<string, JsonValue>
+  causedBy: string | null
+  timestamp: string
+  actor?: string
+}
+
+interface Decision {
+  id: string
+  eventId: string
+  graphId: string
+  selectedAction: string
+  alternatives: Alternative[]
+  confidence: number
+  reasoning: string
+  timestamp: string
+}
+```
+
+### Input Types
+
+```typescript
+interface ObjectInput {
+  type: string
+  data: Record<string, JsonValue>
+}
+
+interface EventInput {
+  type: EventType
+  payload: Record<string, JsonValue>
+  causedBy?: string | null
+  actor?: string
+}
+
+interface DecisionInput {
+  selectedAction: string
+  alternatives: Alternative[]
+  confidence: number
+  reasoning: string
+}
+```
+
+### Filter Types
+
+```typescript
+interface ObjectFilter {
+  type?: string
+  dataMatch?: Record<string, JsonValue>
+}
+
+interface RelationFilter {
+  type?: string
+  sourceId?: string
+  targetId?: string
+}
+
+interface EventFilter {
+  type?: EventType
+  after?: string
+  before?: string
+  causedBy?: string
+}
+
+interface DecisionFilter {
+  after?: string
+  before?: string
+  minConfidence?: number
+}
+```
+
+### Branching Types
+
+```typescript
+interface BranchOptions {
+  atEvent: string
+  label?: string
+  branchId?: string
+}
+
+interface GraphDiff {
+  sourceGraphId: string
+  targetGraphId: string
+  objects: ObjectDiff[]
+  relations: RelationDiff[]
+  sourceLog: GraphEvent[]
+  targetLog: GraphEvent[]
+}
+```
+
+### Governance Types
+
+```typescript
+interface PatchProposal {
+  id: string
+  graphId: string
+  objectType: string
+  data: Record<string, JsonValue>
+  reason: string
+  status: 'pending' | 'applied' | 'rejected'
+  proposedBy: string
+  decidedBy?: string
+  createdAt: string
+  resolvedAt?: string
+}
+
+interface ProposeInput {
+  type: string
+  data: Record<string, JsonValue>
+  reason?: string
+}
+```
+
+### View Types
+
+```typescript
+interface ViewSpec {
+  around: string | string[]  // Dot-path to focal object IDs
+  depth: number              // BFS hops
+}
+
+interface GraphView {
+  objects(): GraphObject[]
+  get(id: string): GraphObject | undefined
+  relations(): GraphRelation[]
+  objectsOfType(type: string): GraphObject[]
+  neighbors(objectId: string): GraphObject[]
+}
+```
+
+---
+
+## Storage Adapters
+
+### MemoryAdapter
+
+In-memory storage for development and testing.
+
+```typescript
+import { MemoryAdapter } from '@operad/adapter-memory'
+const storage = new MemoryAdapter()
+```
+
+### PostgresAdapter
+
+Production storage with PostgreSQL.
+
+```typescript
+import { PostgresAdapter } from '@operad/adapter-postgres'
+const storage = new PostgresAdapter('postgres://...')
+```
+
+---
+
+## Exports
+
+All public exports from `@operad/core`:
+
+```typescript
+// Runtime
+export { createRuntime } from './runtime.js'
+
+// Behavior factories
+export { behavior, matchesWhere, BehaviorRegistry } from './behavior.js'
+export { relationBehavior } from './relation-behavior.js'
+export { llmBehavior } from './llm-behavior.js'
+
+// Graph
+export { Graph } from './graph.js'
+
+// View
+export { GraphViewImpl, resolveView } from './view.js'
+
+// Pattern Matching
+export { parsePattern, matchPattern } from './pattern.js'
+
+// Patches
+export { PatchRegistry } from './patch.js'
+
+// Diff
+export { computeDiff } from './diff.js'
+
+// Replay
+export { checkout } from './replay.js'
+
+// Render
+export { renderAsciiGraph } from './render.js'
+
+// All types are also exported
+```

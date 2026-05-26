@@ -1,0 +1,171 @@
+---
+title: Behaviors
+description: Reactive functions that fire on events, creating cascading workflows.
+---
+
+Behaviors are **reactive functions** that fire when specific events occur. They're the building blocks of agent workflows — when something happens in the graph, behaviors react by creating objects, making decisions, or calling LLMs.
+
+## Why This Matters
+
+In the insurance pack, filing a single claim triggers a cascade of 6 behaviors — from intake to evidence extraction to risk scoring to approval. No orchestrator needed. Each behavior reacts to what happened before it, like dominoes.
+
+## Basic Behavior
+
+```typescript
+import { behavior } from '@operad/core'
+
+const tagHighValue = behavior({
+  name: 'tag-high-value',
+  on: ['object.created'],                    // When to fire
+  where: { 'payload.objectType': 'claim' },  // Filter condition
+  handler: async (event, graph, ctx) => {
+    const amount = (event.payload.data as any).estimatedAmount
+    if (amount > 25000) {
+      await graph.addObject({
+        type: 'tag',
+        data: { label: 'high-value', amount },
+      })
+    }
+  },
+})
+```
+
+### Where Clauses
+
+The `where` clause filters events using dot-path matching against the event payload:
+
+```typescript
+where: { 'payload.objectType': 'claim' }
+// Only fires when the event's payload.objectType === 'claim'
+```
+
+### Handler Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `event` | `GraphEvent` | The event that triggered this behavior |
+| `graph` | `GraphAPI` | Full graph API for reads and writes |
+| `ctx` | `BehaviorContext` | Context with `emit()`, `propose()`, `view`, `matches` |
+
+## LLM Behaviors
+
+LLM behaviors wrap AI calls with caching, observability events, and provider injection:
+
+```typescript
+import { llmBehavior } from '@operad/core'
+
+const extractEvidence = llmBehavior(
+  {
+    name: 'evidence-extraction',
+    on: ['custom.extract_evidence'],
+    model: 'claude-sonnet',
+    prompt: (event) => {
+      const desc = event.payload.claimDescription as string
+      return `Extract evidence from: ${desc}`
+    },
+    onResponse: async (text, event, graph, ctx) => {
+      const parsed = JSON.parse(text)
+      for (const item of parsed.evidence) {
+        await graph.addObject({ type: 'evidence', data: item })
+      }
+    },
+  },
+  myLLMProvider  // Implements LLMProvider interface
+)
+```
+
+### LLMProvider Interface
+
+```typescript
+interface LLMProvider {
+  complete(opts: {
+    model: string
+    prompt: string
+    tools?: unknown[]
+  }): Promise<{
+    text: string
+    usage?: { inputTokens: number; outputTokens: number }
+  }>
+}
+```
+
+LLM behaviors automatically:
+- Emit `llm.requested` and `llm.responded` events for observability
+- Cache responses by prompt hash
+- Track token usage
+
+## Relation Behaviors
+
+React to events on objects that have specific relations:
+
+```typescript
+import { relationBehavior } from '@operad/core'
+
+const checkDeps = relationBehavior({
+  name: 'check-dependencies',
+  relationType: 'depends_on',
+  on: ['object.patched'],
+  handler: async (relation, event, graph, ctx) => {
+    const source = await graph.getObject(relation.sourceId)
+    const target = await graph.getObject(relation.targetId)
+    // Check if the dependency is satisfied
+  },
+})
+```
+
+## Views (Scoped Reads)
+
+Views give behaviors a scoped snapshot of the graph neighborhood:
+
+```typescript
+const analyzeWithLLM = llmBehavior({
+  name: 'analyzer',
+  on: ['custom.analyze'],
+  view: { around: 'payload.claimId', depth: 2 },
+  // view.around: dot-path into event to find focal object ID
+  // view.depth: BFS hops from that object
+  model: 'claude-sonnet',
+  prompt: (event, view) => {
+    const nearby = view?.objects() ?? []
+    return `Analyze ${nearby.length} objects in this neighborhood`
+  },
+  // ...
+}, provider)
+```
+
+## Governance (Patches)
+
+Behaviors can propose changes that require human approval:
+
+```typescript
+handler: async (event, graph, ctx) => {
+  if (riskScore >= 50) {
+    // Propose instead of directly creating
+    await ctx.propose!({
+      type: 'approval',
+      data: { status: 'pending_review', reason: 'High risk' },
+      reason: 'Requires human review',
+    })
+  }
+}
+
+// Later, a human approves:
+await runtime.approve(patchId, 'admin-user')
+// → Object is created, patch.applied event emitted
+```
+
+## Registering Behaviors
+
+```typescript
+const runtime = createRuntime({
+  storage: new MemoryAdapter(),
+  behaviors: [behavior1, behavior2, llmBehavior3],
+})
+
+// Or add later:
+runtime.registerBehavior(newBehavior)
+```
+
+## Next
+
+[Decisions](/docs/concepts/decisions/) — Recording choices with alternatives and reasoning

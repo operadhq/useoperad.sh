@@ -1,0 +1,63 @@
+---
+title: What is Operad?
+description: Event-sourced graph runtime for AI agents. Every mutation is an event. Every event has a cause. Every decision is recorded.
+---
+
+Operad is an **event-sourced graph runtime** for AI agents. It gives your agents persistent memory with a complete audit trail — every mutation is an event, every event has a cause, and every decision is recorded with alternatives and reasoning.
+
+## Why Operad?
+
+AI agents make decisions, but most frameworks treat memory as a black box. Operad makes every action **traceable, reproducible, and auditable**:
+
+- **Graph**: Objects and relations form a knowledge graph your agent builds over time
+- **Events**: Every mutation produces an immutable event with causal chains
+- **Behaviors**: Reactive functions that fire on events, creating cascading workflows
+- **Decisions**: Every choice is recorded with rejected alternatives and confidence scores
+- **Branching**: Fork the graph to explore what-if scenarios, then diff the outcomes
+
+## Install
+
+```bash
+npm install @operad/core @operad/adapter-memory
+```
+
+## 10-Line Example
+
+```typescript
+import { createRuntime, behavior } from '@operad/core'
+import { MemoryAdapter } from '@operad/adapter-memory'
+
+const runtime = createRuntime({
+  storage: new MemoryAdapter(),
+  behaviors: [
+    behavior({
+      name: 'tag-high-value',
+      on: ['object.created'],
+      where: { 'payload.objectType': 'claim' },
+      handler: async (event, graph) => {
+        const amount = (event.payload.data as any).estimatedAmount
+        if (amount > 25000) {
+          await graph.addObject({
+            type: 'tag',
+            data: { label: 'high-value', amount },
+          })
+        }
+      },
+    }),
+  ],
+})
+
+const graph = await runtime.createGraph('my-agent')
+await graph.addObject({
+  type: 'claim',
+  data: { estimatedAmount: 35000, type: 'water_damage' },
+})
+// → behavior fires, creates tag object, everything is event-sourced
+```
+
+## Next Steps
+
+- [Quickstart](/docs/quickstart/) — Run the insurance pack demo in 30 seconds
+- [Graph](/docs/concepts/graph/) — Objects, relations, and queries
+- [Events](/docs/concepts/events/) — The event log and causal chains
+- [API Reference](/docs/reference/api/) — Full API surface

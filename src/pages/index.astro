@@ -1,0 +1,1252 @@
+---
+import Base from '../layouts/Base.astro'
+
+const heroCode = `<span class="kw">import</span> { createRuntime, behavior } <span class="kw">from</span> <span class="str">'@operad/core'</span>
+<span class="kw">import</span> { MemoryAdapter } <span class="kw">from</span> <span class="str">'@operad/adapter-memory'</span>
+
+<span class="kw">const</span> runtime = createRuntime({ storage: <span class="kw">new</span> MemoryAdapter() })
+<span class="kw">const</span> graph = <span class="kw">await</span> runtime.createGraph(<span class="str">'claim-4521'</span>)
+
+<span class="cmt">// Add what the agent knows</span>
+<span class="kw">const</span> claim = <span class="kw">await</span> graph.addObject({
+  type: <span class="str">'claim'</span>,
+  data: { policy: <span class="str">'HO-3-12345'</span>, status: <span class="str">'open'</span> }
+})
+
+<span class="cmt">// Record why it decided</span>
+<span class="kw">await</span> graph.recordDecision({
+  selectedAction: <span class="str">'approve_claim'</span>,
+  alternatives: [
+    { action: <span class="str">'deny'</span>, rejected: <span class="str">'evidence supports'</span> }
+  ],
+  confidence: <span class="num">0.92</span>
+})
+
+<span class="cmt">// Trace the full causal chain</span>
+<span class="kw">const</span> chain = <span class="kw">await</span> graph.traceBackward(decision.eventId)`
+
+const promptCode = `You are an expert TypeScript developer.
+
+1. Install the package:
+   npm install @operad/core @operad/adapter-memory
+
+2. Build a small experiment that demonstrates:
+   - Creating a graph with objects and relations
+   - Recording a decision with alternatives
+   - Tracing the causal chain backward
+   - Forking the graph to explore an alternative
+   - Diffing the original vs the branch
+
+3. Run it and explain:
+   - How the event log captures every mutation
+   - How traceBackward reveals the "why"
+   - How fork/diff enables counterfactual reasoning
+
+Use the real API from @operad/core. Do not mock anything.`
+
+const babyagiCode = `<span class="kw">import</span> { createRuntime, behavior } <span class="kw">from</span> <span class="str">'@operad/core'</span>
+<span class="kw">import</span> { MemoryAdapter } <span class="kw">from</span> <span class="str">'@operad/adapter-memory'</span>
+
+<span class="cmt">// Behavior 1: Initialize with a goal</span>
+<span class="kw">const</span> initializer = behavior({
+  name: <span class="str">'initialize-goal'</span>,
+  on: [<span class="str">'graph.created'</span>],
+  handler: <span class="kw">async</span> (event, graph) =&gt; {
+    <span class="kw">await</span> graph.addObject({
+      type: <span class="str">'task'</span>,
+      data: { description: <span class="str">'Research competitor pricing'</span>, status: <span class="str">'pending'</span> }
+    })
+  }
+})
+
+<span class="cmt">// Behavior 2: Execute pending tasks</span>
+<span class="kw">const</span> executor = behavior({
+  name: <span class="str">'execute-task'</span>,
+  on: [<span class="str">'object.created'</span>],
+  where: { <span class="str">'payload.objectType'</span>: <span class="str">'task'</span> },
+  handler: <span class="kw">async</span> (event, graph, ctx) =&gt; {
+    <span class="kw">const</span> result = <span class="kw">await</span> ctx.llm(<span class="str">'Execute this task'</span>, event.payload.data)
+    <span class="kw">await</span> graph.addObject({
+      type: <span class="str">'result'</span>,
+      data: { taskId: event.payload.objectId, output: result }
+    })
+    <span class="kw">await</span> graph.recordDecision({
+      selectedAction: <span class="str">'completed'</span>,
+      confidence: <span class="num">0.85</span>,
+      reasoning: result.summary
+    })
+  }
+})
+
+<span class="cmt">// Behavior 3: Create follow-up tasks from results</span>
+<span class="kw">const</span> taskCreator = behavior({
+  name: <span class="str">'create-follow-ups'</span>,
+  on: [<span class="str">'object.created'</span>],
+  where: { <span class="str">'payload.objectType'</span>: <span class="str">'result'</span> },
+  handler: <span class="kw">async</span> (event, graph, ctx) =&gt; {
+    <span class="kw">const</span> nextTasks = <span class="kw">await</span> ctx.llm(<span class="str">'What follow-up tasks?'</span>, event.payload.data)
+    <span class="kw">for</span> (<span class="kw">const</span> task <span class="kw">of</span> nextTasks) {
+      <span class="kw">await</span> graph.addObject({ type: <span class="str">'task'</span>, data: task })
+    }
+  }
+})
+
+<span class="kw">const</span> runtime = createRuntime({
+  storage: <span class="kw">new</span> MemoryAdapter(),
+  behaviors: [initializer, executor, taskCreator]
+})
+
+<span class="cmt">// One line starts the entire loop</span>
+<span class="kw">await</span> runtime.createGraph(<span class="str">'research-agent'</span>)
+<span class="cmt">// → initializer fires → executor fires → taskCreator fires → loop continues</span>
+<span class="cmt">// Every step is in the event log. Every decision is recorded.</span>`
+
+const forkCode = `<span class="cmt">// Time-travel to event #42</span>
+<span class="kw">const</span> branch = <span class="kw">await</span> runtime.fork(<span class="str">'claim-4521'</span>, {
+  atEvent: <span class="num">42</span>,
+  label: <span class="str">'what-if-deny'</span>
+})
+
+<span class="cmt">// Explore a different path</span>
+<span class="kw">await</span> branch.graph.recordDecision({
+  selectedAction: <span class="str">'deny_claim'</span>,
+  alternatives: [{ action: <span class="str">'approve'</span>, rejected: <span class="str">'testing'</span> }],
+  confidence: <span class="num">0.65</span>
+})
+
+<span class="cmt">// Compare outcomes</span>
+<span class="kw">const</span> diff = <span class="kw">await</span> runtime.diff(<span class="str">'claim-4521'</span>, branch.id)`
+
+const governCode = `<span class="kw">const</span> guard = behavior({
+  name: <span class="str">'stale-data-guard'</span>,
+  on: [<span class="str">'object.stale'</span>],
+  handler: <span class="kw">async</span> (event, graph, ctx) =&gt; {
+    ctx.propose({
+      target: event.payload.objectId,
+      action: <span class="str">'reverify'</span>,
+      reason: <span class="str">'Not verified in 30+ days'</span>
+    })
+  }
+})
+<span class="cmt">// Human approves → object re-verified</span>
+<span class="kw">await</span> runtime.approve(patchId)`
+---
+
+<Base>
+  <!-- ═══════════════════════════════════════ -->
+  <!-- HERO -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="hero" data-reveal>
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="hero-label">OPEN SOURCE &middot; MIT &middot; TYPESCRIPT</p>
+        <h1>A persistent world for AI agents.</h1>
+        <p class="hero-sub">A shared graph of objects, relations, decisions, and causal chains — derived from an append-only event log.</p>
+        <p class="hero-desc">Operad gives your agent memory it can <em>prove</em>. Every mutation is an event. Every event has a cause. Every decision records what was chosen, what was rejected, and why.</p>
+        <div class="hero-cta">
+          <code class="install-cmd">npm install @operad/core @operad/adapter-memory</code>
+        </div>
+      </div>
+      <div class="hero-code">
+        <div class="code-window">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">quickstart.ts</span>
+        </div>
+        <pre><code set:html={heroCode} /></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- FOR AI ASSISTANTS -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="ai-assistants" data-reveal>
+    <div class="ai-grid">
+      <div class="ai-text">
+        <p class="section-label">FOR AI ASSISTANTS</p>
+        <h2>Paste this into Claude, ChatGPT, or your coding agent.</h2>
+        <p>The best way to learn Operad is to let an AI build something with it. This prompt walks the agent through the core primitives — graphs, events, decisions, forks — using the real API.</p>
+        <p>No mocks. No abstractions. Just <code>@operad/core</code> and a working experiment.</p>
+      </div>
+      <div class="ai-code">
+        <div class="code-window">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">prompt.txt</span>
+        </div>
+        <pre><code set:html={promptCode} /></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- AGENTS NEED MORE THAN MEMORY -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="more-than-memory" data-reveal>
+    <p class="section-label">THE PROBLEM</p>
+    <h2>Agents need more than memory.</h2>
+    <p class="section-sub">Existing tools solve one piece. None solve the whole picture.</p>
+
+    <div class="layer-cards">
+      <div class="layer-card">
+        <h3>Memory</h3>
+        <p class="layer-tools">Mem0, Zep, LangChain Memory</p>
+        <p>Store facts. Retrieve facts. But no causal history — you know <em>what</em> the agent remembers, not <em>why</em> it learned it or <em>when</em> it was last true.</p>
+      </div>
+      <div class="layer-card">
+        <h3>Orchestration</h3>
+        <p class="layer-tools">LangGraph, CrewAI, AutoGen</p>
+        <p>Route tasks between agents. But state between steps is ephemeral — no immutable log, no branching, no replay from a prior state.</p>
+      </div>
+      <div class="layer-card">
+        <h3>Observability</h3>
+        <p class="layer-tools">LangSmith, Braintrust, Arize</p>
+        <p>Watch agents from the outside. But the agent itself has no access to its own history — it can't act on what happened.</p>
+      </div>
+    </div>
+
+    <div class="operad-layer">
+      <div class="operad-layer-inner">
+        <h3>Operad</h3>
+        <p>The append-only event log projected into a live graph. The agent's memory <em>is</em> the audit trail. Objects, relations, decisions, and causal chains — all queryable, forkable, and governed from inside the runtime.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- WHERE IT FITS -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="where-it-fits" data-reveal>
+    <div class="fits-grid">
+      <div class="fits-text">
+        <p class="section-label">INFRASTRUCTURE</p>
+        <h2>The layer beneath your agent framework.</h2>
+        <p>Operad is not an agent framework. It's the persistent state layer that any framework can use. It complements your existing stack — not replaces it.</p>
+      </div>
+      <div class="fits-stack">
+        <ol class="stack-list">
+          <li>
+            <span class="stack-num">01</span>
+            <div>
+              <strong>Models</strong>
+              <span class="stack-desc">GPT, Claude, Llama, Mistral</span>
+            </div>
+          </li>
+          <li>
+            <span class="stack-num">02</span>
+            <div>
+              <strong>Tool frameworks</strong>
+              <span class="stack-desc">Vercel AI SDK, MCP, function calling</span>
+            </div>
+          </li>
+          <li>
+            <span class="stack-num">03</span>
+            <div>
+              <strong>Orchestration</strong>
+              <span class="stack-desc">LangGraph, CrewAI, custom loops</span>
+            </div>
+          </li>
+          <li>
+            <span class="stack-num">04</span>
+            <div>
+              <strong>Memory</strong>
+              <span class="stack-desc">Mem0, Zep, vector stores</span>
+            </div>
+          </li>
+          <li class="stack-highlight">
+            <span class="stack-num">05</span>
+            <div>
+              <strong>Operad</strong>
+              <span class="stack-desc">Event-sourced graph runtime — this layer</span>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- WHAT YOU CAN BUILD -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="capabilities" data-reveal>
+    <p class="section-label">CAPABILITIES</p>
+    <h2>What you can build.</h2>
+
+    <div class="cap-grid">
+      <div class="cap-card">
+        <span class="cap-num">01</span>
+        <h3>Auditable agents</h3>
+        <p>Every mutation emits an event with causal links. Trace any decision back to its origin — the actual execution path, not a reconstructed explanation.</p>
+      </div>
+      <div class="cap-card">
+        <span class="cap-num">02</span>
+        <h3>Forkable runs</h3>
+        <p>Checkpoint at any event. Fork the graph. Explore a counterfactual path. Diff original vs branch. Keep the best outcome.</p>
+      </div>
+      <div class="cap-card">
+        <span class="cap-num">03</span>
+        <h3>Reactive systems</h3>
+        <p>Behaviors subscribe to event types. When a matching event fires, the behavior runs — creating chains of reactive logic driven by the event log.</p>
+      </div>
+      <div class="cap-card">
+        <span class="cap-num">04</span>
+        <h3>Relations with meaning</h3>
+        <p>Typed edges between objects — <code>supports</code>, <code>contradicts</code>, <code>depends_on</code>. Query patterns across the graph. Drive logic from structure, not just data.</p>
+      </div>
+      <div class="cap-card">
+        <span class="cap-num">05</span>
+        <h3>Long-running memory</h3>
+        <p>Facts persist across sessions. Staleness tracking flags what's gone cold. Health records show verification history. The agent knows what it knows — and what it's forgotten.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- WORKED EXAMPLES -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="worked-examples" data-reveal>
+    <p class="section-label">EXAMPLES</p>
+    <h2>The event log is the agent.</h2>
+
+    <div class="example-block">
+      <div class="example-text">
+        <h3>Fork, explore, commit</h3>
+        <p>Time-travel to any point in the event log. Fork a branch. Explore an alternative. Diff the outcomes. This is how agents do counterfactual reasoning — not by re-prompting, but by replaying and branching the actual state.</p>
+      </div>
+      <div class="example-code">
+        <div class="code-window">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">fork-explore.ts</span>
+        </div>
+        <pre><code set:html={forkCode} /></pre>
+      </div>
+    </div>
+
+    <div class="example-block reverse">
+      <div class="example-code">
+        <div class="code-window">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">governance.ts</span>
+        </div>
+        <pre><code set:html={governCode} /></pre>
+      </div>
+      <div class="example-text">
+        <h3>Detect, react, govern</h3>
+        <p>Behaviors watch the event stream. When stale data is detected, a behavior proposes a patch — not a direct mutation. A governance gate requires human approval. The agent suggests; a human decides.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- BABYAGI-STYLE EXAMPLE -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="babyagi-example" data-reveal>
+    <div class="babyagi-grid">
+      <div class="babyagi-code">
+        <div class="code-window">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">task-agent.ts</span>
+        </div>
+        <pre><code set:html={babyagiCode} /></pre>
+      </div>
+      <div class="babyagi-text">
+        <p class="section-label">PATTERN</p>
+        <h2>Task agent in behaviors.</h2>
+        <p>Three behaviors wired through events — not function calls. The graph <em>is</em> the task queue. The event log <em>is</em> the execution trace.</p>
+        <ol class="babyagi-steps">
+          <li><strong>01</strong> <code>initialize-goal</code> creates the first task object</li>
+          <li><strong>02</strong> <code>execute-task</code> reacts to new tasks, records decisions</li>
+          <li><strong>03</strong> <code>create-follow-ups</code> reacts to results, spawns more tasks</li>
+        </ol>
+        <p class="babyagi-note">The loop emerges from the event log. No explicit orchestration needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- COMPARISON TABLE -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="comparison" data-reveal>
+    <p class="section-label">COMPARISON</p>
+    <h2>How Operad compares.</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="highlight-col">Operad</th>
+            <th>LangChain Memory</th>
+            <th>Mem0</th>
+            <th>LangGraph</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Event sourcing</td><td class="highlight-col">&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>Causal chains</td><td class="highlight-col">&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>Decision records</td><td class="highlight-col">&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>Replay / checkout</td><td class="highlight-col">&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>Partial</td></tr>
+          <tr><td>Fork / branch / diff</td><td class="highlight-col">&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>Staleness tracking</td><td class="highlight-col">&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>Reactive behaviors</td><td class="highlight-col">&#10003;</td><td>&mdash;</td><td>&mdash;</td><td>&#10003;</td></tr>
+          <tr><td>TypeScript-native</td><td class="highlight-col">&#10003;</td><td>Python</td><td>Python</td><td>Python</td></tr>
+          <tr><td>Storage-agnostic</td><td class="highlight-col">&#10003;</td><td>Vector DB</td><td>Proprietary</td><td>Checkpointer</td></tr>
+          <tr><td>Open source</td><td class="highlight-col">MIT</td><td>MIT</td><td>Closed</td><td>MIT</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- INSPIRATIONS (bottom) -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="inspirations" data-reveal>
+    <p class="section-label">ACKNOWLEDGMENTS</p>
+    <h2>Inspired by</h2>
+    <p class="section-sub">Operad stands on the work of researchers and builders who proved these patterns first.</p>
+    <div class="insp-grid">
+      <a class="insp-card" href="https://arxiv.org/abs/2605.21997" target="_blank" rel="noopener">
+        <span class="insp-tag">library + paper</span>
+        <h3>ActiveGraph</h3>
+        <p class="insp-paper-id">arXiv:2605.21997</p>
+        <p>"The Log is the Agent: Event-Sourced Reactive Graphs for Auditable, Forkable Agentic Systems" — Yohei Nakajima (BabyAGI). Proved that event-sourced knowledge graphs are the right abstraction for agent state.</p>
+      </a>
+      <a class="insp-card" href="https://arxiv.org/abs/2602.23193" target="_blank" rel="noopener">
+        <span class="insp-tag">paper</span>
+        <h3>ESAA</h3>
+        <p class="insp-paper-id">arXiv:2602.23193</p>
+        <p>"Event Sourcing for Autonomous Agents in LLM-Based Software Engineering" — Agents emit structured intentions; a deterministic orchestrator validates and persists events in an append-only log.</p>
+      </a>
+      <a class="insp-card" href="https://arxiv.org/abs/2511.00628" target="_blank" rel="noopener">
+        <span class="insp-tag">paper</span>
+        <h3>AgentGit</h3>
+        <p class="insp-paper-id">arXiv:2511.00628</p>
+        <p>"A Version Control Framework for Reliable and Scalable LLM-Powered Multi-Agent Systems" — Git-like rollback and branching for agent state with persistent checkpoints.</p>
+      </a>
+      <a class="insp-card" href="https://arxiv.org/abs/2602.14849" target="_blank" rel="noopener">
+        <span class="insp-tag">paper</span>
+        <h3>Atomix</h3>
+        <p class="insp-paper-id">arXiv:2602.14849</p>
+        <p>"Timely, Transactional Tool Use for Reliable Agentic Workflows" — Epoch-tagged calls, frontier-gated commits, and compensating actions for atomic agent operations.</p>
+      </a>
+      <a class="insp-card" href="https://arxiv.org/abs/2602.08199" target="_blank" rel="noopener">
+        <span class="insp-tag">paper</span>
+        <h3>Fork/Explore/Commit</h3>
+        <p class="insp-paper-id">arXiv:2602.08199</p>
+        <p>"OS Primitives for Agentic Exploration" — Copy-on-write branch contexts with fork, explore, and first-commit-wins resolution for parallel agent exploration.</p>
+      </a>
+      <a class="insp-card" href="https://arxiv.org/abs/2503.11951" target="_blank" rel="noopener">
+        <span class="insp-tag">paper</span>
+        <h3>SagaLLM</h3>
+        <p class="insp-paper-id">arXiv:2503.11951 &middot; VLDB 2025</p>
+        <p>"Context Management, Validation, and Transaction Guarantees for Multi-Agent LLM Planning" — Saga-pattern transactions with persistent memory and automated compensation.</p>
+      </a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ─── SCROLL REVEAL ────────────────── */
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+  }
+
+  [data-reveal]:global(.revealed) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── SHARED ────────────────────────── */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+
+  .section-sub {
+    color: var(--text-muted);
+    max-width: 560px;
+    margin-bottom: 2.5rem;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  /* ─── CODE WINDOWS ─────────────────── */
+  .code-window {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: #12131C;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .code-dots {
+    display: flex;
+    gap: 7px;
+  }
+
+  .code-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    opacity: 0.85;
+  }
+
+  .code-dots span:nth-child(1) { background: #FF5F57; }
+  .code-dots span:nth-child(2) { background: #FEBC2E; }
+  .code-dots span:nth-child(3) { background: #28C840; }
+
+  .code-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .hero-code,
+  .ai-code,
+  .example-code,
+  .babyagi-code {
+    border-radius: 12px;
+    box-shadow: var(--code-shadow);
+    overflow: hidden;
+    transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+  }
+
+  .hero-code:hover,
+  .ai-code:hover,
+  .example-code:hover,
+  .babyagi-code:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1.5rem 1.5rem;
+    overflow-x: auto;
+    font-size: 0.78rem;
+    line-height: 1.75;
+    margin: 0;
+    border-radius: 0 0 12px 12px;
+  }
+
+  pre :global(.kw) { color: #BB9AF7; }
+  pre :global(.str) { color: #9ECE6A; }
+  pre :global(.num) { color: #FF9E64; }
+  pre :global(.cmt) { color: #565F89; }
+
+  /* ─── HERO ─────────────────────────── */
+  .hero {
+    padding: 7rem 0 6rem;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .hero-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+  }
+
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, var(--text) 0%, #3B4A7A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin-bottom: 1rem;
+  }
+
+  .hero-desc {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin-bottom: 2rem;
+  }
+
+  .hero-desc em {
+    color: var(--text);
+    font-style: italic;
+  }
+
+  .install-cmd {
+    display: inline-block;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 0.7rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+
+  .install-cmd:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  }
+
+  /* ─── AI ASSISTANTS ────────────────── */
+  .ai-assistants {
+    padding: 6rem 0;
+  }
+
+  .ai-grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .ai-text h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .ai-text p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+  }
+
+  .ai-text code {
+    background: var(--accent-subtle);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: var(--accent);
+  }
+
+  /* ─── MORE THAN MEMORY ─────────────── */
+  .more-than-memory {
+    padding: 6rem 0;
+  }
+
+  .more-than-memory h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .layer-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .layer-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+  }
+
+  .layer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  .layer-card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+
+  .layer-tools {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 0.75rem;
+  }
+
+  .layer-card p:last-child {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .layer-card em {
+    color: var(--text);
+    font-style: italic;
+  }
+
+  .operad-layer {
+    border: 1px solid rgba(59, 91, 219, 0.25);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(59, 91, 219, 0.04) 0%, rgba(92, 124, 250, 0.06) 100%);
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(59, 91, 219, 0.08), 0 4px 16px rgba(59, 91, 219, 0.06);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .operad-layer:hover {
+    box-shadow: 0 0 0 1px rgba(59, 91, 219, 0.15), 0 8px 24px rgba(59, 91, 219, 0.1);
+  }
+
+  .operad-layer::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-light) 100%);
+    border-radius: 12px 0 0 12px;
+  }
+
+  .operad-layer-inner {
+    padding: 1.75rem 1.75rem 1.75rem 2rem;
+  }
+
+  .operad-layer h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .operad-layer p {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+
+  .operad-layer em {
+    color: var(--text);
+    font-style: italic;
+  }
+
+  /* ─── WHERE IT FITS ────────────────── */
+  .where-it-fits {
+    padding: 6rem 0;
+  }
+
+  .fits-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .fits-text h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .fits-text p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .stack-list {
+    list-style: none;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+  }
+
+  .stack-list li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+  }
+
+  .stack-list li:hover {
+    background: rgba(0, 0, 0, 0.01);
+  }
+
+  .stack-list li:last-child {
+    border-bottom: none;
+  }
+
+  .stack-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    font-weight: 600;
+  }
+
+  .stack-list li div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stack-list li strong {
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .stack-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+
+  .stack-highlight {
+    background: linear-gradient(90deg, rgba(59, 91, 219, 0.06) 0%, rgba(59, 91, 219, 0.02) 100%);
+    border-left: 3px solid var(--accent);
+  }
+
+  .stack-highlight:hover {
+    background: linear-gradient(90deg, rgba(59, 91, 219, 0.08) 0%, rgba(59, 91, 219, 0.03) 100%) !important;
+  }
+
+  .stack-highlight .stack-num {
+    color: var(--accent);
+  }
+
+  .stack-highlight strong {
+    color: var(--accent);
+  }
+
+  /* ─── CAPABILITIES ─────────────────── */
+  .capabilities {
+    padding: 6rem 0;
+  }
+
+  .capabilities h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .cap-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1.75rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.3s ease;
+  }
+
+  .cap-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--accent-glow);
+  }
+
+  .cap-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0.25;
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+
+  .cap-card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+
+  .cap-card p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .cap-card code {
+    background: var(--accent-subtle);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+
+  /* ─── WORKED EXAMPLES ──────────────── */
+  .worked-examples {
+    padding: 6rem 0;
+  }
+
+  .worked-examples h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    letter-spacing: -0.02em;
+  }
+
+  .example-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3.5rem;
+    align-items: center;
+    margin-bottom: 5rem;
+  }
+
+  .example-block.reverse .example-code {
+    order: -1;
+  }
+
+  .example-text h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .example-text p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ─── BABYAGI EXAMPLE ──────────────── */
+  .babyagi-example {
+    padding: 6rem 0;
+  }
+
+  .babyagi-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .babyagi-text h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .babyagi-text p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .babyagi-text em {
+    color: var(--text);
+    font-style: italic;
+  }
+
+  .babyagi-steps {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+  }
+
+  .babyagi-steps li {
+    font-size: 0.9rem;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0.85rem;
+    align-items: baseline;
+    background: var(--card-bg);
+    transition: background 0.2s ease;
+  }
+
+  .babyagi-steps li:last-child {
+    border-bottom: none;
+  }
+
+  .babyagi-steps li:hover {
+    background: rgba(59, 91, 219, 0.02);
+  }
+
+  .babyagi-steps li strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+  }
+
+  .babyagi-steps code {
+    background: var(--accent-subtle);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: var(--accent);
+  }
+
+  .babyagi-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ─── COMPARISON ───────────────────── */
+  .comparison {
+    padding: 6rem 0;
+  }
+
+  .comparison h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--card-shadow);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  th, td {
+    padding: 0.85rem 1.25rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  th {
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    background: var(--bg-alt);
+  }
+
+  tr {
+    transition: background 0.15s ease;
+  }
+
+  tbody tr:hover {
+    background: rgba(0, 0, 0, 0.01);
+  }
+
+  .highlight-col {
+    background: rgba(59, 91, 219, 0.03);
+    font-weight: 600;
+  }
+
+  th.highlight-col {
+    color: var(--accent);
+    background: rgba(59, 91, 219, 0.06);
+  }
+
+  /* ─── INSPIRATIONS ─────────────────── */
+  .inspirations {
+    padding: 6rem 0;
+  }
+
+  .inspirations h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .insp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .insp-card {
+    display: block;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .insp-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: rgba(59, 91, 219, 0.2);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .insp-tag {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+
+  .insp-card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.25rem;
+    color: var(--text);
+  }
+
+  .insp-paper-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+  }
+
+  .insp-card p:last-child {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+
+  /* ─── SECTION DIVIDERS (gradient fade) ── */
+  .ai-assistants,
+  .more-than-memory,
+  .where-it-fits,
+  .capabilities,
+  .worked-examples,
+  .babyagi-example,
+  .comparison,
+  .inspirations {
+    position: relative;
+  }
+
+  .ai-assistants::before,
+  .more-than-memory::before,
+  .where-it-fits::before,
+  .capabilities::before,
+  .worked-examples::before,
+  .babyagi-example::before,
+  .comparison::before,
+  .inspirations::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -2rem;
+    right: -2rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--border-strong) 20%, var(--border-strong) 80%, transparent 100%);
+  }
+
+  /* ─── RESPONSIVE ───────────────────── */
+  @media (max-width: 768px) {
+    .hero-grid,
+    .ai-grid,
+    .fits-grid,
+    .babyagi-grid,
+    .example-block {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .example-block.reverse .example-code {
+      order: 0;
+    }
+
+    .hero {
+      padding: 3.5rem 0 3rem;
+    }
+
+    .hero h1 {
+      font-size: 2rem;
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+    }
+
+    .layer-cards,
+    .cap-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .insp-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .ai-assistants,
+    .more-than-memory,
+    .where-it-fits,
+    .capabilities,
+    .worked-examples,
+    .babyagi-example,
+    .comparison,
+    .inspirations {
+      padding: 3.5rem 0;
+    }
+
+    table {
+      font-size: 0.78rem;
+    }
+
+    th, td {
+      padding: 0.6rem 0.75rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .insp-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+      font-size: 1.7rem;
+    }
+  }
+</style>

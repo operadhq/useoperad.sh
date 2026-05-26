@@ -1,0 +1,102 @@
+---
+title: Graph
+description: Objects, relations, and queries — the knowledge graph your agent builds.
+---
+
+The graph is the **persistent memory** of your AI agent. It stores typed objects (nodes) connected by typed relations (edges). Every mutation is event-sourced — nothing is lost.
+
+## Why This Matters
+
+In the insurance pack, a single claim creates a neighborhood of connected objects: the claim links to a policy via `filed_under`, evidence items connect via `supports`, and a claimant connects via `filed_by`. The graph captures the full context an agent needs to make decisions.
+
+## Objects
+
+Objects are typed data nodes. They have an `id`, a `type` string, and a `data` record.
+
+```typescript
+const claim = await graph.addObject({
+  type: 'claim',
+  data: {
+    claimNumber: 'CLM-2024-00147',
+    type: 'water_damage',
+    estimatedAmount: 35000,
+    status: 'open',
+  },
+})
+// claim.id → "obj_a1b2c3..."
+// claim.type → "claim"
+// claim.createdByEventId → links to the event that created it
+```
+
+### Querying Objects
+
+```typescript
+// All objects
+const all = await graph.queryObjects()
+
+// By type
+const claims = await graph.queryObjects({ type: 'claim' })
+
+// By data match (shallow key comparison)
+const highValue = await graph.queryObjects({
+  type: 'claim',
+  dataMatch: { status: 'open' },
+})
+```
+
+### Patching Objects
+
+```typescript
+await graph.patchObject(claim.id, { status: 'under_review' })
+// Emits object.patched event with the patch data
+```
+
+## Relations
+
+Relations connect two objects with a typed edge. They can carry data too.
+
+```typescript
+// Claim filed under a policy
+await graph.addRelation(claim.id, policy.id, 'filed_under')
+
+// Evidence supports a claim
+await graph.addRelation(evidence.id, claim.id, 'supports')
+
+// Query relations
+const supporting = await graph.queryRelations({
+  type: 'supports',
+  targetId: claim.id,
+})
+```
+
+### Relation Types in the Insurance Pack
+
+| Relation | From → To | Meaning |
+|----------|----------|---------|
+| `filed_by` | claimant → claim | Who filed the claim |
+| `filed_under` | claim → policy | Which policy covers this |
+| `supports` | evidence → claim | Evidence backing a claim |
+
+## API Surface
+
+```typescript
+interface GraphAPI {
+  // Objects
+  addObject(input: ObjectInput): Promise<GraphObject>
+  getObject(id: string): Promise<GraphObject | null>
+  patchObject(id: string, data: Record<string, JsonValue>): Promise<GraphObject>
+  removeObject(id: string): Promise<void>
+  queryObjects(filter?: ObjectFilter): Promise<GraphObject[]>
+
+  // Relations
+  addRelation(sourceId: string, targetId: string, type: string,
+    data?: Record<string, JsonValue>): Promise<GraphRelation>
+  getRelation(id: string): Promise<GraphRelation | null>
+  removeRelation(id: string): Promise<void>
+  queryRelations(filter?: RelationFilter): Promise<GraphRelation[]>
+}
+```
+
+## Next
+
+[Events](/docs/concepts/events/) — How every mutation produces an immutable event

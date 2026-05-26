@@ -1,0 +1,92 @@
+:root {
+  --bg: #FAFAF7;
+  --bg-alt: #F4F4F0;
+  --accent: #3B5BDB;
+  --accent-light: #5C7CFA;
+  --accent-glow: rgba(59, 91, 219, 0.12);
+  --accent-subtle: #EDF2FF;
+  --text: #1A1A2E;
+  --text-muted: #6B7280;
+  --text-faint: #9CA3AF;
+  --code-bg: #0F1019;
+  --code-text: #A9B1D6;
+  --border: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.1);
+  --card-bg: #FFFFFF;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.04);
+  --code-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
+  --max-width: 1280px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+code, pre {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-light);
+  text-decoration: none;
+}
+
+/* ─── SCROLL REVEAL ANIMATION ──────── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  animation: fadeUp 0.7s var(--ease-out) both;
+}
+
+/* Staggered children */
+.reveal-stagger > * {
+  opacity: 0;
+  animation: fadeUp 0.6s var(--ease-out) both;
+}
+.reveal-stagger > *:nth-child(1) { animation-delay: 0s; }
+.reveal-stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.reveal-stagger > *:nth-child(3) { animation-delay: 0.16s; }
+.reveal-stagger > *:nth-child(4) { animation-delay: 0.24s; }
+.reveal-stagger > *:nth-child(5) { animation-delay: 0.32s; }
+.reveal-stagger > *:nth-child(6) { animation-delay: 0.4s; }
+
+/* Selection */
+::selection {
+  background: var(--accent);
+  color: white;
+}

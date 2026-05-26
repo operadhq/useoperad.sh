@@ -1,0 +1,122 @@
+---
+title: Events
+description: The immutable event log, causal chains, and traceability.
+---
+
+Every mutation in Operad produces an **immutable event**. Events form causal chains — each event can point to the event that caused it. This gives you a complete audit trail of what happened, why, and in what order.
+
+## Why This Matters
+
+When an insurance claim is approved, you can trace backward from the approval to find every decision, every behavior that fired, every object created — all the way back to the original claim filing. This is the difference between "we approved it" and "here's exactly why we approved it."
+
+## Event Types
+
+```typescript
+type EventType =
+  // Lifecycle
+  | 'graph.created' | 'goal.set' | 'runtime.idle'
+  // Graph mutations
+  | 'object.created' | 'object.patched' | 'object.removed'
+  | 'relation.created' | 'relation.removed'
+  // Behaviors
+  | 'behavior.triggered' | 'behavior.completed' | 'behavior.failed'
+  // Decisions
+  | 'decision.recorded'
+  // LLM
+  | 'llm.requested' | 'llm.responded'
+  // Patches (governance)
+  | 'patch.proposed' | 'patch.applied' | 'patch.rejected'
+  // Custom
+  | `custom.${string}`
+```
+
+## Event Structure
+
+```typescript
+interface GraphEvent {
+  id: string          // Unique event ID
+  graphId: string     // Which graph this belongs to
+  type: EventType     // What happened
+  payload: Record<string, JsonValue>  // Event-specific data
+  causedBy: string | null  // Parent event ID (causal chain)
+  timestamp: string   // ISO 8601
+  actor?: string      // Who/what: 'user', 'runtime', or behavior name
+}
+```
+
+## Causal Chains
+
+Every event can point to its cause via `causedBy`. This creates a tree of causation:
+
+```
+graph.created (actor: user)
+  └─ object.created [policy] (actor: user)
+  └─ object.created [claim] (actor: user)
+       └─ behavior.triggered [claim-intake] (actor: runtime)
+       └─ object.created [claimant] (actor: claim-intake)
+            └─ behavior.triggered [evidence-extraction] (actor: runtime)
+            └─ llm.requested (actor: evidence-extraction)
+            └─ llm.responded (actor: evidence-extraction)
+            └─ object.created [evidence] (actor: evidence-extraction)
+                 └─ ...cascade continues
+```
+
+### Tracing Events
+
+```typescript
+// Trace backward: "Why was this object created?"
+const chain = await graph.traceBackward(event.id)
+// Returns: [event, parent, grandparent, ...]
+
+// Trace forward: "What did this event cause?"
+const effects = await graph.traceForward(event.id)
+// Returns: [child1, child2, grandchild1, ...]
+```
+
+## Custom Events
+
+You can emit custom events to trigger behaviors without creating objects:
+
+```typescript
+await runtime.emit('my-graph', {
+  type: 'custom.score_risk',
+  payload: { claimId: claim.id },
+})
+// Any behavior listening for 'custom.score_risk' will fire
+```
+
+## Actor Field
+
+Every event tracks who or what caused it:
+
+- `'user'` — External action (API call, user input)
+- `'runtime'` — System event (behavior triggered/completed)
+- `'claim-intake'` — The behavior that caused this event
+
+```typescript
+const events = await storage.queryEvents('my-graph', { type: 'object.created' })
+events.forEach(e => console.log(`${e.type} by ${e.actor}`))
+// object.created by user
+// object.created by claim-intake
+// object.created by evidence-extraction
+```
+
+## API Surface
+
+```typescript
+// On GraphAPI
+traceBackward(eventId: string): Promise<GraphEvent[]>
+traceForward(eventId: string): Promise<GraphEvent[]>
+
+// On Runtime
+emit(graphId: string, input: EventInput): Promise<GraphEvent>
+
+// On StorageAdapter
+appendEvent(graphId: string, event: EventInput): Promise<GraphEvent>
+queryEvents(graphId: string, filter: EventFilter): Promise<GraphEvent[]>
+getEventChain(eventId: string): Promise<GraphEvent[]>
+```
+
+## Next
+
+[Behaviors](/docs/concepts/behaviors/) — Reactive functions that fire on events
