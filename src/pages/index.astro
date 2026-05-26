@@ -412,25 +412,25 @@ const governCode = `<span class="kw">const</span> guard = behavior({
             <!-- Node glow filters -->
             <filter id="glow-blue" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="4" result="blur" />
-              <feFlood flood-color="#3B5BDB" flood-opacity="0.3" />
+              <feFlood flood-color="#4338CA" flood-opacity="0.3" />
               <feComposite in2="blur" operator="in" />
               <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
             <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="4" result="blur" />
-              <feFlood flood-color="#16a766" flood-opacity="0.25" />
+              <feFlood flood-color="#059669" flood-opacity="0.25" />
               <feComposite in2="blur" operator="in" />
               <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
             <filter id="glow-red" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="4" result="blur" />
-              <feFlood flood-color="#fb4c2f" flood-opacity="0.3" />
+              <feFlood flood-color="#DC2626" flood-opacity="0.3" />
               <feComposite in2="blur" operator="in" />
               <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
             <filter id="glow-amber" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="4" result="blur" />
-              <feFlood flood-color="#ffad47" flood-opacity="0.25" />
+              <feFlood flood-color="#D97706" flood-opacity="0.25" />
               <feComposite in2="blur" operator="in" />
               <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
@@ -664,7 +664,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1.25rem;
-    background: #12131C;
+    background: #0E0C1F;
     border-radius: 12px 12px 0 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
@@ -720,7 +720,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     border-radius: 0 0 12px 12px;
   }
 
-  pre :global(.kw) { color: #BB9AF7; }
+  pre :global(.kw) { color: #A78BFA; }
   pre :global(.str) { color: #9ECE6A; }
   pre :global(.num) { color: #FF9E64; }
   pre :global(.cmt) { color: #565F89; }
@@ -752,7 +752,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     letter-spacing: -0.03em;
     line-height: 1.1;
     margin-bottom: 1.25rem;
-    background: linear-gradient(135deg, var(--text) 0%, #3B4A7A 100%);
+    background: linear-gradient(135deg, var(--text) 0%, #4338CA 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -887,16 +887,16 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .operad-layer {
-    border: 1px solid rgba(59, 91, 219, 0.25);
+    border: 1px solid rgba(67, 56, 202, 0.25);
     border-radius: 12px;
-    background: linear-gradient(135deg, rgba(59, 91, 219, 0.04) 0%, rgba(92, 124, 250, 0.06) 100%);
+    background: linear-gradient(135deg, rgba(67, 56, 202, 0.04) 0%, rgba(99, 102, 241, 0.06) 100%);
     position: relative;
-    box-shadow: 0 0 0 1px rgba(59, 91, 219, 0.08), 0 4px 16px rgba(59, 91, 219, 0.06);
+    box-shadow: 0 0 0 1px rgba(67, 56, 202, 0.08), 0 4px 16px rgba(67, 56, 202, 0.06);
     transition: box-shadow 0.3s ease;
   }
 
   .operad-layer:hover {
-    box-shadow: 0 0 0 1px rgba(59, 91, 219, 0.15), 0 8px 24px rgba(59, 91, 219, 0.1);
+    box-shadow: 0 0 0 1px rgba(67, 56, 202, 0.15), 0 8px 24px rgba(67, 56, 202, 0.1);
   }
 
   .operad-layer::before {
@@ -1008,12 +1008,12 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .stack-highlight {
-    background: linear-gradient(90deg, rgba(59, 91, 219, 0.06) 0%, rgba(59, 91, 219, 0.02) 100%);
+    background: linear-gradient(90deg, rgba(67, 56, 202, 0.06) 0%, rgba(67, 56, 202, 0.02) 100%);
     border-left: 3px solid var(--accent);
   }
 
   .stack-highlight:hover {
-    background: linear-gradient(90deg, rgba(59, 91, 219, 0.08) 0%, rgba(59, 91, 219, 0.03) 100%) !important;
+    background: linear-gradient(90deg, rgba(67, 56, 202, 0.08) 0%, rgba(67, 56, 202, 0.03) 100%) !important;
   }
 
   .stack-highlight .stack-num {
@@ -1185,7 +1185,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .babyagi-steps li:hover {
-    background: rgba(59, 91, 219, 0.02);
+    background: rgba(67, 56, 202, 0.02);
   }
 
   .babyagi-steps li strong {
@@ -1261,13 +1261,13 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .highlight-col {
-    background: rgba(59, 91, 219, 0.03);
+    background: rgba(67, 56, 202, 0.03);
     font-weight: 600;
   }
 
   th.highlight-col {
     color: var(--accent);
-    background: rgba(59, 91, 219, 0.06);
+    background: rgba(67, 56, 202, 0.06);
   }
 
   /* ─── INSPIRATIONS ─────────────────── */
@@ -1304,7 +1304,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   .insp-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--card-shadow-hover);
-    border-color: rgba(59, 91, 219, 0.2);
+    border-color: rgba(67, 56, 202, 0.2);
     text-decoration: none;
     color: inherit;
   }
@@ -1412,8 +1412,8 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .step-btn.active {
-    background: rgba(59, 91, 219, 0.1);
-    border-color: rgba(59, 91, 219, 0.25);
+    background: rgba(67, 56, 202, 0.1);
+    border-color: rgba(67, 56, 202, 0.25);
     color: var(--text);
   }
 
@@ -1431,16 +1431,16 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .step-btn.completed .step-num {
-    color: #16a766;
+    color: #059669;
     opacity: 1;
   }
 
   .play-btn {
     margin-top: 0.5rem;
     padding: 0.6rem 1rem;
-    border: 1px solid rgba(59, 91, 219, 0.3);
+    border: 1px solid rgba(67, 56, 202, 0.3);
     border-radius: 8px;
-    background: rgba(59, 91, 219, 0.08);
+    background: rgba(67, 56, 202, 0.08);
     color: var(--accent);
     cursor: pointer;
     font-family: 'JetBrains Mono', monospace;
@@ -1452,18 +1452,18 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .play-btn:hover {
-    background: rgba(59, 91, 219, 0.15);
-    border-color: rgba(59, 91, 219, 0.5);
+    background: rgba(67, 56, 202, 0.15);
+    border-color: rgba(67, 56, 202, 0.5);
   }
 
   .play-btn.playing {
-    background: rgba(251, 76, 47, 0.1);
-    border-color: rgba(251, 76, 47, 0.3);
-    color: #fb4c2f;
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #DC2626;
   }
 
   .demo-canvas {
-    background: #0F1019;
+    background: #0C0A1D;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     overflow: hidden;
@@ -1509,10 +1509,10 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     100% { transform: scale(1); }
   }
 
-  .node-input    { fill: rgba(59, 91, 219, 0.15); stroke: #3B5BDB; stroke-width: 1.5; }
-  .node-created  { fill: rgba(22, 167, 102, 0.10); stroke: #16a766; stroke-width: 1.5; }
-  .node-risk     { fill: rgba(251, 76, 47, 0.12);  stroke: #fb4c2f; stroke-width: 1.5; }
-  .node-decision { fill: rgba(255, 173, 71, 0.08); stroke: #ffad47; stroke-width: 1.5; }
+  .node-input    { fill: rgba(67, 56, 202, 0.15); stroke: #4338CA; stroke-width: 1.5; }
+  .node-created  { fill: rgba(5, 150, 105, 0.10); stroke: #059669; stroke-width: 1.5; }
+  .node-risk     { fill: rgba(220, 38, 38, 0.12);  stroke: #DC2626; stroke-width: 1.5; }
+  .node-decision { fill: rgba(255, 173, 71, 0.08); stroke: #D97706; stroke-width: 1.5; }
 
   .node-text {
     fill: rgba(255, 255, 255, 0.9);
@@ -1571,7 +1571,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     min-height: 80px;
   }
 
-  .demo-code-panel :global(.ck) { color: #BB9AF7; }
+  .demo-code-panel :global(.ck) { color: #A78BFA; }
   .demo-code-panel :global(.cs) { color: #9ECE6A; }
   .demo-code-panel :global(.cn) { color: #FF9E64; }
   .demo-code-panel :global(.cc) { color: #565F89; }
@@ -1602,7 +1602,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   }
 
   .event-log :global(.log-ts)    { color: rgba(255, 255, 255, 0.2); }
-  .event-log :global(.log-event) { color: #BB9AF7; }
+  .event-log :global(.log-event) { color: #A78BFA; }
   .event-log :global(.log-arrow) { color: rgba(255, 255, 255, 0.15); }
   .event-log :global(.log-target) { color: #9ECE6A; }
 

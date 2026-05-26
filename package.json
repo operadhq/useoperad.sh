@@ -10,7 +10,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "11",
+    "@astrojs/cloudflare": "^11.2.0",
     "@astrojs/starlight": "^0.29.3",
     "astro": "^4.16.0",
     "sharp": "^0.34.5"
