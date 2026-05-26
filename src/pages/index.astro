@@ -337,6 +337,189 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   </section>
 
   <!-- ═══════════════════════════════════════ -->
+  <!-- STEP-THROUGH DEMO -->
+  <!-- ═══════════════════════════════════════ -->
+  <section class="step-demo" data-reveal>
+    <p class="section-label">SEE IT RUN</p>
+    <h2>A claim flows through six behaviors.</h2>
+    <p class="section-sub">Click each step to watch the graph build — or hit Play to run the full cascade. Every node is an object. Every edge is a causal link. Every event is logged.</p>
+    <div class="demo-grid">
+      <div class="demo-sidebar">
+        <button class="step-btn active" data-step="0">
+          <span class="step-num">00</span>
+          <span class="step-info">
+            <span class="step-label">Seed data</span>
+            <span class="step-desc">Claim + policy enter the graph</span>
+          </span>
+        </button>
+        <button class="step-btn" data-step="1">
+          <span class="step-num">01</span>
+          <span class="step-info">
+            <span class="step-label">Claim Intake</span>
+            <span class="step-desc">Extract claimant from claim</span>
+          </span>
+        </button>
+        <button class="step-btn" data-step="2">
+          <span class="step-num">02</span>
+          <span class="step-info">
+            <span class="step-label">Evidence Extract</span>
+            <span class="step-desc">Pull photos + adjuster report</span>
+          </span>
+        </button>
+        <button class="step-btn" data-step="3">
+          <span class="step-num">03</span>
+          <span class="step-info">
+            <span class="step-label">Contradiction Check</span>
+            <span class="step-desc">Flag timeline mismatches</span>
+          </span>
+        </button>
+        <button class="step-btn" data-step="4">
+          <span class="step-num">04</span>
+          <span class="step-info">
+            <span class="step-label">Risk Scoring</span>
+            <span class="step-desc">Score evidence + flags → 0.72</span>
+          </span>
+        </button>
+        <button class="step-btn" data-step="5">
+          <span class="step-num">05</span>
+          <span class="step-info">
+            <span class="step-label">Carrier Routing</span>
+            <span class="step-desc">Match to carrier by coverage</span>
+          </span>
+        </button>
+        <button class="step-btn" data-step="6">
+          <span class="step-num">06</span>
+          <span class="step-info">
+            <span class="step-label">Approval Gate</span>
+            <span class="step-desc">Human reviews AI recommendation</span>
+          </span>
+        </button>
+        <button class="play-btn" id="play-all">▶ Play all</button>
+      </div>
+      <div class="demo-canvas">
+        <svg id="demo-svg" viewBox="0 0 640 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Dot grid background -->
+          <defs>
+            <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.6" fill="rgba(255,255,255,0.06)" />
+            </pattern>
+            <marker id="arrow" viewBox="0 0 10 8" refX="10" refY="4" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 4 L0 8 Z" fill="rgba(255,255,255,0.25)" />
+            </marker>
+            <marker id="arrow-active" viewBox="0 0 10 8" refX="10" refY="4" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 4 L0 8 Z" fill="rgba(59,91,219,0.6)" />
+            </marker>
+            <!-- Node glow filters -->
+            <filter id="glow-blue" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feFlood flood-color="#3B5BDB" flood-opacity="0.3" />
+              <feComposite in2="blur" operator="in" />
+              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feFlood flood-color="#16a766" flood-opacity="0.25" />
+              <feComposite in2="blur" operator="in" />
+              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glow-red" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feFlood flood-color="#fb4c2f" flood-opacity="0.3" />
+              <feComposite in2="blur" operator="in" />
+              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glow-amber" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feFlood flood-color="#ffad47" flood-opacity="0.25" />
+              <feComposite in2="blur" operator="in" />
+              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+          <rect width="640" height="320" fill="url(#dot-grid)" />
+          <!-- Edges -->
+          <g id="demo-edges">
+            <line class="demo-edge" data-edge="policy-claim"       x1="130" y1="55"  x2="230" y2="55"  marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="claim-claimant"      x1="355" y1="55"  x2="460" y2="55"  marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="claim-ev1"           x1="270" y1="75"  x2="150" y2="130" marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="claim-ev2"           x1="310" y1="75"  x2="420" y2="130" marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="ev1-risk"            x1="185" y1="165" x2="290" y2="195" marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="ev1-assessment"      x1="140" y1="165" x2="140" y2="245" marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="risk-assessment"     x1="305" y1="220" x2="205" y2="250" marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="assessment-carrier"  x1="210" y1="268" x2="380" y2="268" marker-end="url(#arrow)" />
+            <line class="demo-edge" data-edge="carrier-approval"    x1="485" y1="268" x2="545" y2="268" marker-end="url(#arrow)" />
+          </g>
+          <!-- Nodes -->
+          <g id="demo-nodes">
+            <!-- Step 0: Seed -->
+            <g class="demo-node" data-node="policy" filter="url(#glow-blue)">
+              <rect x="30"  y="35" width="100" height="40" rx="8" class="node-input" />
+              <text x="80"  y="58" text-anchor="middle" class="node-text">policy</text>
+              <text x="80"  y="70" text-anchor="middle" class="node-subtext">HO-3-12345</text>
+            </g>
+            <g class="demo-node" data-node="claim" filter="url(#glow-blue)">
+              <rect x="240" y="35" width="110" height="40" rx="8" class="node-input" />
+              <text x="295" y="58" text-anchor="middle" class="node-text">claim</text>
+              <text x="295" y="70" text-anchor="middle" class="node-subtext">CLM-4521</text>
+            </g>
+            <!-- Step 1: Claim Intake -->
+            <g class="demo-node" data-node="claimant" filter="url(#glow-green)">
+              <rect x="465" y="35" width="120" height="40" rx="8" class="node-created" />
+              <text x="525" y="58" text-anchor="middle" class="node-text">claimant</text>
+              <text x="525" y="70" text-anchor="middle" class="node-subtext">John Doe</text>
+            </g>
+            <!-- Step 2: Evidence Extract -->
+            <g class="demo-node" data-node="evidence-1" filter="url(#glow-green)">
+              <rect x="60" y="130" width="150" height="40" rx="8" class="node-created" />
+              <text x="135" y="152" text-anchor="middle" class="node-text">evidence-1</text>
+              <text x="135" y="164" text-anchor="middle" class="node-subtext">photo · roof damage</text>
+            </g>
+            <g class="demo-node" data-node="evidence-2" filter="url(#glow-green)">
+              <rect x="350" y="130" width="160" height="40" rx="8" class="node-created" />
+              <text x="430" y="152" text-anchor="middle" class="node-text">evidence-2</text>
+              <text x="430" y="164" text-anchor="middle" class="node-subtext">adjuster report · filed 3/12</text>
+            </g>
+            <!-- Step 3: Contradiction Check -->
+            <g class="demo-node" data-node="risk-flag" filter="url(#glow-red)">
+              <rect x="260" y="195" width="140" height="30" rx="6" class="node-risk" />
+              <text x="330" y="214" text-anchor="middle" class="node-text">⚠ risk_flag</text>
+            </g>
+            <!-- Step 4: Risk Scoring -->
+            <g class="demo-node" data-node="assessment" filter="url(#glow-amber)">
+              <rect x="65" y="248" width="145" height="40" rx="8" class="node-decision" />
+              <text x="137" y="270" text-anchor="middle" class="node-text">assessment</text>
+              <text x="137" y="282" text-anchor="middle" class="node-subtext">score: 0.72 · medium risk</text>
+            </g>
+            <!-- Step 5: Carrier Routing -->
+            <g class="demo-node" data-node="carrier-resp" filter="url(#glow-amber)">
+              <rect x="385" y="248" width="100" height="40" rx="8" class="node-decision" />
+              <text x="435" y="270" text-anchor="middle" class="node-text">carrier</text>
+              <text x="435" y="282" text-anchor="middle" class="node-subtext">Acme Ins.</text>
+            </g>
+            <!-- Step 6: Approval Gate -->
+            <g class="demo-node" data-node="approval" filter="url(#glow-green)">
+              <rect x="545" y="248" width="80" height="40" rx="8" class="node-created" />
+              <text x="585" y="270" text-anchor="middle" class="node-text">approval</text>
+              <text x="585" y="282" text-anchor="middle" class="node-subtext">pending</text>
+            </g>
+          </g>
+        </svg>
+        <div class="demo-code-panel" id="demo-code">
+          <div class="demo-code-header">
+            <span class="demo-code-dot"></span>
+            <span class="demo-code-dot"></span>
+            <span class="demo-code-dot"></span>
+            <span class="demo-code-filename" id="demo-code-filename">seed.ts</span>
+          </div>
+          <pre class="demo-code-body" id="demo-code-body"></pre>
+        </div>
+        <div class="event-log" id="event-log">
+          <span class="log-label">EVENT LOG</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ -->
   <!-- BABYAGI-STYLE EXAMPLE -->
   <!-- ═══════════════════════════════════════ -->
   <section class="babyagi-example" data-reveal>
@@ -1155,12 +1338,281 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     line-height: 1.65;
   }
 
+  /* ─── STEP-THROUGH DEMO ──────────────── */
+  .step-demo {
+    padding: 6rem 0;
+  }
+
+  .step-demo h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .demo-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .step-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+    font-size: 0.82rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    opacity: 0.4;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .step-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .step-label {
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  .step-desc {
+    font-size: 0.68rem;
+    opacity: 0.5;
+    line-height: 1.4;
+  }
+
+  .step-btn:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+  }
+
+  .step-btn.active {
+    background: rgba(59, 91, 219, 0.1);
+    border-color: rgba(59, 91, 219, 0.25);
+    color: var(--text);
+  }
+
+  .step-btn.active .step-num {
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  .step-btn.active .step-desc {
+    opacity: 0.7;
+  }
+
+  .step-btn.completed {
+    color: var(--text);
+  }
+
+  .step-btn.completed .step-num {
+    color: #16a766;
+    opacity: 1;
+  }
+
+  .play-btn {
+    margin-top: 0.5rem;
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(59, 91, 219, 0.3);
+    border-radius: 8px;
+    background: rgba(59, 91, 219, 0.08);
+    color: var(--accent);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: all 0.25s ease;
+    width: 100%;
+  }
+
+  .play-btn:hover {
+    background: rgba(59, 91, 219, 0.15);
+    border-color: rgba(59, 91, 219, 0.5);
+  }
+
+  .play-btn.playing {
+    background: rgba(251, 76, 47, 0.1);
+    border-color: rgba(251, 76, 47, 0.3);
+    color: #fb4c2f;
+  }
+
+  .demo-canvas {
+    background: #0F1019;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  }
+
+  #demo-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    padding: 8px;
+  }
+
+  .demo-edge {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1.5;
+    stroke-dasharray: 600;
+    stroke-dashoffset: 600;
+    opacity: 0;
+    transition: stroke-dashoffset 0.8s ease, opacity 0.4s ease;
+  }
+
+  .demo-edge.visible {
+    stroke-dashoffset: 0;
+    opacity: 1;
+    stroke: rgba(255, 255, 255, 0.18);
+  }
+
+  .demo-node {
+    opacity: 0;
+    transform-origin: center;
+    transition: opacity 0.4s ease;
+  }
+
+  .demo-node.visible {
+    opacity: 1;
+    animation: nodeAppear 0.5s var(--ease-spring) both;
+  }
+
+  @keyframes nodeAppear {
+    0%   { transform: scale(0); }
+    70%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  .node-input    { fill: rgba(59, 91, 219, 0.15); stroke: #3B5BDB; stroke-width: 1.5; }
+  .node-created  { fill: rgba(22, 167, 102, 0.10); stroke: #16a766; stroke-width: 1.5; }
+  .node-risk     { fill: rgba(251, 76, 47, 0.12);  stroke: #fb4c2f; stroke-width: 1.5; }
+  .node-decision { fill: rgba(255, 173, 71, 0.08); stroke: #ffad47; stroke-width: 1.5; }
+
+  .node-text {
+    fill: rgba(255, 255, 255, 0.9);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+
+  .node-subtext {
+    fill: rgba(255, 255, 255, 0.35);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 400;
+  }
+
+  .demo-code-panel {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .demo-code-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .demo-code-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .demo-code-dot:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+  .demo-code-dot:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+  .demo-code-dot:nth-child(3) { background: #28C840; opacity: 0.7; }
+
+  .demo-code-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.25);
+    margin-left: 6px;
+  }
+
+  .demo-code-body {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.7);
+    overflow-x: auto;
+    background: transparent;
+    min-height: 80px;
+  }
+
+  .demo-code-panel :global(.ck) { color: #BB9AF7; }
+  .demo-code-panel :global(.cs) { color: #9ECE6A; }
+  .demo-code-panel :global(.cn) { color: #FF9E64; }
+  .demo-code-panel :global(.cc) { color: #565F89; }
+  .demo-code-panel :global(.ct) { color: rgba(255,255,255,0.5); }
+
+  .event-log {
+    padding: 0.6rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    max-height: 100px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .log-label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 0.15rem;
+  }
+
+  .event-log :global(.log-entry) {
+    display: block;
+  }
+
+  .event-log :global(.log-ts)    { color: rgba(255, 255, 255, 0.2); }
+  .event-log :global(.log-event) { color: #BB9AF7; }
+  .event-log :global(.log-arrow) { color: rgba(255, 255, 255, 0.15); }
+  .event-log :global(.log-target) { color: #9ECE6A; }
+
   /* ─── SECTION DIVIDERS (gradient fade) ── */
   .ai-assistants,
   .more-than-memory,
   .where-it-fits,
   .capabilities,
   .worked-examples,
+  .step-demo,
   .babyagi-example,
   .comparison,
   .inspirations {
@@ -1172,6 +1624,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
   .where-it-fits::before,
   .capabilities::before,
   .worked-examples::before,
+  .step-demo::before,
   .babyagi-example::before,
   .comparison::before,
   .inspirations::before {
@@ -1190,9 +1643,28 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     .ai-grid,
     .fits-grid,
     .babyagi-grid,
+    .demo-grid,
     .example-block {
       grid-template-columns: 1fr;
       gap: 2.5rem;
+    }
+
+    .demo-sidebar {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .step-btn {
+      flex: 0 0 auto;
+      width: auto;
+      padding: 0.45rem 0.65rem;
+      font-size: 0.72rem;
+    }
+
+    .play-btn {
+      width: auto;
+      flex: 0 0 auto;
     }
 
     .example-block.reverse .example-code {
@@ -1225,6 +1697,7 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     .where-it-fits,
     .capabilities,
     .worked-examples,
+    .step-demo,
     .babyagi-example,
     .comparison,
     .inspirations {
@@ -1250,3 +1723,261 @@ const governCode = `<span class="kw">const</span> guard = behavior({
     }
   }
 </style>
+
+<script>
+  const STEP_CODE = [
+    { file: 'seed.ts', code:
+`<span class="ck">const</span> graph = <span class="ck">await</span> runtime.createGraph(<span class="cs">'claim-4521'</span>)
+
+<span class="cc">// Seed the graph with initial objects</span>
+<span class="ck">await</span> graph.addObject({
+  type: <span class="cs">'claim'</span>,
+  data: { id: <span class="cs">'CLM-4521'</span>, status: <span class="cs">'open'</span> }
+})
+<span class="ck">await</span> graph.addObject({
+  type: <span class="cs">'policy'</span>,
+  data: { id: <span class="cs">'HO-3-12345'</span>, type: <span class="cs">'HO-3'</span> }
+})` },
+    { file: 'claim-intake.ts', code:
+`<span class="ck">const</span> intake = behavior({
+  name: <span class="cs">'claim-intake'</span>,
+  on: [<span class="cs">'object.created'</span>],
+  where: { <span class="cs">'payload.objectType'</span>: <span class="cs">'claim'</span> },
+  handler: <span class="ck">async</span> (event, graph) => {
+    <span class="ck">const</span> claimant = <span class="ck">await</span> graph.addObject({
+      type: <span class="cs">'claimant'</span>,
+      data: { name: <span class="cs">'John Doe'</span>, phone: <span class="cs">'555-0142'</span> }
+    })
+  }
+})` },
+    { file: 'evidence-extract.ts', code:
+`<span class="ck">const</span> extract = behavior({
+  name: <span class="cs">'evidence-extract'</span>,
+  on: [<span class="cs">'object.created'</span>],
+  where: { <span class="cs">'payload.objectType'</span>: <span class="cs">'claimant'</span> },
+  handler: <span class="ck">async</span> (event, graph) => {
+    <span class="ck">await</span> graph.addObject({ type: <span class="cs">'evidence'</span>,
+      data: { kind: <span class="cs">'photo'</span>, desc: <span class="cs">'roof damage'</span> } })
+    <span class="ck">await</span> graph.addObject({ type: <span class="cs">'evidence'</span>,
+      data: { kind: <span class="cs">'report'</span>, filed: <span class="cs">'2024-03-12'</span> } })
+  }
+})` },
+    { file: 'contradiction-check.ts', code:
+`<span class="ck">const</span> check = behavior({
+  name: <span class="cs">'contradiction-check'</span>,
+  on: [<span class="cs">'object.created'</span>],
+  where: { <span class="cs">'payload.objectType'</span>: <span class="cs">'evidence'</span> },
+  handler: <span class="ck">async</span> (event, graph) => {
+    <span class="ck">const</span> gap = detectTimelineGap(event.payload)
+    <span class="ck">if</span> (gap) <span class="ck">await</span> graph.addObject({
+      type: <span class="cs">'risk_flag'</span>,
+      data: { reason: <span class="cs">'timeline_mismatch'</span>, severity: <span class="cs">'high'</span> }
+    })
+  }
+})` },
+    { file: 'risk-scoring.ts', code:
+`<span class="ck">const</span> scoring = behavior({
+  name: <span class="cs">'risk-scoring'</span>,
+  on: [<span class="cs">'object.created'</span>],
+  where: { <span class="cs">'payload.objectType'</span>: <span class="cs">'risk_flag'</span> },
+  handler: <span class="ck">async</span> (event, graph) => {
+    <span class="ck">await</span> graph.recordDecision({
+      selectedAction: <span class="cs">'approve'</span>,
+      confidence: <span class="cn">0.72</span>,
+      alternatives: [
+        { action: <span class="cs">'deny'</span>, score: <span class="cn">0.28</span> },
+        { action: <span class="cs">'escalate'</span>, score: <span class="cn">0.15</span> }
+      ]
+    })
+  }
+})` },
+    { file: 'carrier-routing.ts', code:
+`<span class="ck">const</span> routing = behavior({
+  name: <span class="cs">'carrier-routing'</span>,
+  on: [<span class="cs">'decision.recorded'</span>],
+  handler: <span class="ck">async</span> (event, graph) => {
+    <span class="ck">const</span> match = <span class="ck">await</span> findCarrier(event.payload)
+    <span class="ck">await</span> graph.addObject({
+      type: <span class="cs">'carrier_resp'</span>,
+      data: { carrier: <span class="cs">'Acme Ins.'</span>, match: <span class="cs">'coverage'</span> }
+    })
+  }
+})` },
+    { file: 'approval-gate.ts', code:
+`<span class="ck">const</span> gate = behavior({
+  name: <span class="cs">'approval-gate'</span>,
+  on: [<span class="cs">'object.created'</span>],
+  where: { <span class="cs">'payload.objectType'</span>: <span class="cs">'carrier_resp'</span> },
+  handler: <span class="ck">async</span> (event, graph, ctx) => {
+    <span class="cc">// Governance: AI suggests, human decides</span>
+    <span class="ck">await</span> ctx.requestApproval({
+      reviewer: <span class="cs">'claims-team'</span>,
+      confidence: <span class="cn">0.72</span>,
+      reason: <span class="cs">'risk_flag present'</span>
+    })
+  }
+})` },
+  ]
+
+  const STEPS = [
+    {
+      nodes: ['policy', 'claim'],
+      edges: [],
+      events: [
+        { ts: '00:00.000', event: 'graph.created',   target: 'claim-4521' },
+        { ts: '00:00.012', event: 'object.created',   target: 'claim  { id: "CLM-4521", status: "open" }' },
+        { ts: '00:00.014', event: 'object.created',   target: 'policy { id: "HO-3-12345", type: "HO-3" }' },
+      ],
+    },
+    {
+      nodes: ['claimant'],
+      edges: ['policy-claim', 'claim-claimant'],
+      events: [
+        { ts: '00:00.031', event: 'behavior.fired',   target: 'claim-intake  on: object.created(claim)' },
+        { ts: '00:00.048', event: 'object.created',   target: 'claimant { name: "John Doe", phone: "555-0142" }' },
+        { ts: '00:00.049', event: 'edge.created',      target: 'claim → claimant  (extracted_from)' },
+      ],
+    },
+    {
+      nodes: ['evidence-1', 'evidence-2'],
+      edges: ['claim-ev1', 'claim-ev2'],
+      events: [
+        { ts: '00:00.062', event: 'behavior.fired',   target: 'evidence-extract  on: object.created(claimant)' },
+        { ts: '00:00.084', event: 'object.created',   target: 'evidence-1 { type: "photo", desc: "roof damage" }' },
+        { ts: '00:00.085', event: 'object.created',   target: 'evidence-2 { type: "report", filed: "2024-03-12" }' },
+        { ts: '00:00.086', event: 'edge.created',      target: 'claim → evidence-1, claim → evidence-2' },
+      ],
+    },
+    {
+      nodes: ['risk-flag'],
+      edges: ['ev1-risk'],
+      events: [
+        { ts: '00:00.102', event: 'behavior.fired',   target: 'contradiction-check  on: object.created(evidence)' },
+        { ts: '00:00.118', event: 'object.created',   target: 'risk_flag { reason: "timeline_mismatch", severity: "high" }' },
+        { ts: '00:00.119', event: 'edge.created',      target: 'evidence-1 → risk_flag  (flagged_by)' },
+      ],
+    },
+    {
+      nodes: ['assessment'],
+      edges: ['ev1-assessment', 'risk-assessment'],
+      events: [
+        { ts: '00:00.131', event: 'behavior.fired',   target: 'risk-scoring  on: object.created(risk_flag)' },
+        { ts: '00:00.155', event: 'decision.recorded', target: 'assessment { score: 0.72, band: "medium" }' },
+        { ts: '00:00.156', event: 'decision.meta',     target: 'alternatives: [deny (0.28), escalate (0.15)]' },
+        { ts: '00:00.157', event: 'edge.created',      target: 'evidence-1 → assessment, risk_flag → assessment' },
+      ],
+    },
+    {
+      nodes: ['carrier-resp'],
+      edges: ['assessment-carrier'],
+      events: [
+        { ts: '00:00.170', event: 'behavior.fired',   target: 'carrier-routing  on: decision.recorded(assessment)' },
+        { ts: '00:00.188', event: 'object.created',   target: 'carrier_resp { carrier: "Acme Ins.", match: "coverage" }' },
+        { ts: '00:00.189', event: 'edge.created',      target: 'assessment → carrier_resp  (routed_to)' },
+      ],
+    },
+    {
+      nodes: ['approval'],
+      edges: ['carrier-approval'],
+      events: [
+        { ts: '00:00.201', event: 'behavior.fired',   target: 'approval-gate  on: object.created(carrier_resp)' },
+        { ts: '00:00.215', event: 'governance.pending',target: 'approval { status: "pending-review", conf: 0.72 }' },
+        { ts: '00:00.216', event: 'governance.notify', target: 'reviewer: "claims-team"  reason: "risk_flag present"' },
+      ],
+    },
+  ]
+
+  let currentStep = -1
+  let playInterval: ReturnType<typeof setInterval> | null = null
+  let allLogEntries: Array<{ts: string, event: string, target: string}> = []
+
+  function advanceToStep(targetStep: number) {
+    currentStep = targetStep
+
+    // Update step buttons
+    document.querySelectorAll('.step-btn').forEach((btn, i) => {
+      btn.classList.remove('active', 'completed')
+      if (i < targetStep) btn.classList.add('completed')
+      else if (i === targetStep) btn.classList.add('active')
+    })
+
+    // Reset all nodes and edges
+    document.querySelectorAll('.demo-node').forEach(n => n.classList.remove('visible'))
+    document.querySelectorAll('.demo-edge').forEach(e => e.classList.remove('visible'))
+
+    // Reveal nodes and edges for all steps up to targetStep
+    for (let s = 0; s <= targetStep; s++) {
+      const step = STEPS[s]
+      step.nodes.forEach(id => {
+        document.querySelector(`.demo-node[data-node="${id}"]`)?.classList.add('visible')
+      })
+      step.edges.forEach(id => {
+        document.querySelector(`.demo-edge[data-edge="${id}"]`)?.classList.add('visible')
+      })
+    }
+
+    // Update code panel
+    const codeStep = STEP_CODE[targetStep]
+    document.getElementById('demo-code-filename')!.textContent = codeStep.file
+    document.getElementById('demo-code-body')!.innerHTML = codeStep.code
+
+    // Build cumulative event log
+    allLogEntries = []
+    for (let s = 0; s <= targetStep; s++) {
+      allLogEntries.push(...STEPS[s].events)
+    }
+
+    const log = document.getElementById('event-log')!
+    const entries = log.querySelectorAll('.log-entry')
+    entries.forEach(e => e.remove())
+
+    allLogEntries.forEach(ev => {
+      const span = document.createElement('span')
+      span.className = 'log-entry'
+      span.innerHTML = `<span class="log-ts">${ev.ts}</span> <span class="log-event">${ev.event}</span> <span class="log-arrow">→</span> <span class="log-target">${ev.target}</span>`
+      log.appendChild(span)
+    })
+
+    log.scrollTop = log.scrollHeight
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const step = parseInt((btn as HTMLElement).dataset.step!, 10)
+        if (playInterval) stopPlay()
+        advanceToStep(step)
+      })
+    })
+
+    const playBtn = document.getElementById('play-all')!
+    playBtn.addEventListener('click', () => {
+      if (playInterval) {
+        stopPlay()
+        return
+      }
+      playBtn.textContent = '■ Stop'
+      playBtn.classList.add('playing')
+      let step = 0
+      advanceToStep(step)
+      playInterval = setInterval(() => {
+        step++
+        if (step >= STEPS.length) {
+          stopPlay()
+          return
+        }
+        advanceToStep(step)
+      }, 1400)
+    })
+
+    function stopPlay() {
+      if (playInterval) clearInterval(playInterval)
+      playInterval = null
+      playBtn.textContent = '▶ Play all'
+      playBtn.classList.remove('playing')
+    }
+
+    advanceToStep(0)
+  })
+</script>
