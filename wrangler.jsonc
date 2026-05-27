@@ -13,5 +13,11 @@
   "assets": {
     "binding": "ASSETS",
     "directory": "dist"
-  }
+  },
+  "r2_buckets": [
+    {
+      "binding": "SESSION_SHARES",
+      "bucket_name": "session-shares"
+    }
+  ]
 }
