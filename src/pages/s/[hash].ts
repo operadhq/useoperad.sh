@@ -4,7 +4,7 @@ export const prerender = false
 
 export const GET: APIRoute = async ({ params, locals }) => {
   const { hash } = params
-  if (!hash) {
+  if (!hash || !/^[a-zA-Z0-9]{1,16}$/.test(hash)) {
     return new Response('Not found', { status: 404 })
   }
 
@@ -30,6 +30,11 @@ export const GET: APIRoute = async ({ params, locals }) => {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'public, max-age=3600',
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'origin-when-cross-origin',
+      // Allow inline scripts (needed for self-contained HTML) but block external loads
+      'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://operad.sh; img-src data:",
     },
   })
 }

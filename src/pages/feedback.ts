@@ -11,8 +11,19 @@ const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
+// Simple rate limit: 10 feedbacks per IP per hour
+const fbLimits = new Map<string, { count: number; resetAt: number }>()
+
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime.env
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown'
+  const now = Date.now()
+  const entry = fbLimits.get(ip)
+  if (entry && now < entry.resetAt && entry.count >= 10) {
+    return new Response(JSON.stringify({ error: 'Too many requests' }), { status: 429, headers: corsHeaders })
+  }
+  if (!entry || now > entry.resetAt) fbLimits.set(ip, { count: 1, resetAt: now + 3600_000 })
+  else entry.count++
 
   let body: { type?: string; message?: string; sessionUrl?: string }
   try {
@@ -24,6 +35,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const { type, message, sessionUrl } = body
   if (!message?.trim()) {
     return new Response(JSON.stringify({ error: 'Message is required' }), { status: 400, headers: corsHeaders })
+  }
+  if (message.length > 5000) {
+    return new Response(JSON.stringify({ error: 'Message too long (5000 char max)' }), { status: 400, headers: corsHeaders })
   }
 
   if (type === 'feedback') {

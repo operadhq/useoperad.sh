@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro'
 export const prerender = false
 
 const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
+const RATE_LIMIT = 3 // max uploads per IP per day
 
 const BASE62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
@@ -16,15 +17,33 @@ function generateHash(): string {
   return hash
 }
 
+// In-memory rate limit (resets on Worker cold start — good enough for early stage)
+const uploads = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const entry = uploads.get(ip)
+  if (!entry || now > entry.resetAt) {
+    uploads.set(ip, { count: 1, resetAt: now + 86_400_000 }) // 24 hours
+    return true
+  }
+  if (entry.count >= RATE_LIMIT) return false
+  entry.count++
+  return true
+}
+
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime.env
 
-  // ── Auth ────────────────────────────────────────────────────────────
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ') || authHeader.slice(7) !== env.SHARE_API_KEY) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
+  // ── Rate limit by IP ────────────────────────────────────────────────
+  const ip = request.headers.get('CF-Connecting-IP') ?? request.headers.get('X-Forwarded-For') ?? 'unknown'
+  if (!checkRateLimit(ip)) {
+    return new Response(JSON.stringify({
+      error: 'Free tier limit reached (3 shares/day). Need more? Email hello@operad.sh',
+      upgrade: 'mailto:hello@operad.sh?subject=Operad%20Share%20—%20need%20more%20uploads',
+    }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': '86400' },
     })
   }
 
