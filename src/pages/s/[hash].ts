@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'origin-when-cross-origin',
       // Allow inline scripts (needed for self-contained HTML) but block external loads
-      'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://operad.sh; img-src data:",
+      'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://www.operad.sh; img-src data:",
     },
   })
 }

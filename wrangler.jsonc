@@ -10,10 +10,15 @@
     "global_fetch_strictly_public",
     "nodejs_compat"
   ],
+  "workers_dev": true,
   "assets": {
     "binding": "ASSETS",
     "directory": "dist"
   },
+  "routes": [
+    { "pattern": "www.operad.sh/*", "zone_name": "operad.sh" },
+    { "pattern": "operad.sh/*", "zone_name": "operad.sh" }
+  ],
   "r2_buckets": [
     {
       "binding": "SESSION_SHARES",
